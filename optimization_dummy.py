@@ -43,8 +43,8 @@ def pick_parent(pop, pfit):
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
     # Pick 2 random parents
-    p1 = pop[np.random.randint(0, len(pop))]
-    p2 = pop[np.random.randint(0, len(pop))]
+    p1 = np.random.randint(0, len(pop))
+    p2 = np.random.randint(0, len(pop))
     
     # Return the best of the two
     if pfit[p1] > pfit[p2]:
