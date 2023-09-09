@@ -42,16 +42,6 @@ MESSAGE: state has been loaded.
 
 MESSAGE: state has been saved to files.
 
-MESSAGE: state has been saved to files.
-
-MESSAGE: state has been saved to files.
-
-MESSAGE: state has been saved to files.
-
-MESSAGE: state has been saved to files.
-
-MESSAGE: state has been saved to files.
-
 ########## Simulation state - INI ###########
 
 # solutions # : LOADED 

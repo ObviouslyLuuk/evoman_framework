@@ -182,6 +182,7 @@ def evolution_step(env, pop, pfit, mutation_rate):
 
 def main(
         experiment_name = 'optimization_test',
+        enemies = [2],
         n_hidden_neurons = 10,
         domain_upper = 1,
         domain_lower = -1,
@@ -199,14 +200,13 @@ def main(
 
     # initializes simulation in individual evolution mode, for single static enemy.
     env = Environment(experiment_name=experiment_name,
-                    enemies=[2],
+                    enemies=enemies,
                     playermode="ai",
                     player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="fastest",
                     visuals=False)
-
 
     # number of weights for multilayer with 10 hidden neurons
     n_vars = (env.get_num_sensors()+1)*n_hidden_neurons + (n_hidden_neurons+1)*5
@@ -238,13 +238,13 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(experiment_name, n_hidden_neurons):
+def run_test(experiment_name, enemies, n_hidden_neurons):
     best_solution = np.loadtxt(f'{experiment_name}/best.txt')
 
     print('\nRunning best solution:\n')
 
     env = Environment(experiment_name=experiment_name,
-                    enemies=[2],
+                    enemies=enemies,
                     playermode="ai",
                     player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
                     enemymode="static",
@@ -257,22 +257,23 @@ def run_test(experiment_name, n_hidden_neurons):
 
 
 if __name__ == '__main__':
-    # Set experiment name and number of hidden neurons
+    # Set experiment name, enemies and number of hidden neurons
     # These are used for both the evolution and the test
-    experiment_name = 'optimization_test'
+    enemies = [1]
+    experiment_name = f'optimization_test_{enemies}'
     n_hidden_neurons = 10
 
-    TESTING = False
+    TESTING = True
 
     # Track time
     start_time = time.time()
     if not TESTING:
         main(
-            experiment_name=experiment_name, n_hidden_neurons=n_hidden_neurons,
+            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons,
             gens=15,
         )
     else:
-        run_test(experiment_name=experiment_name, n_hidden_neurons=n_hidden_neurons)
+        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons)
 
     # Print time in minutes and seconds
     print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
