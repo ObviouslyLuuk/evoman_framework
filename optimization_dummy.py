@@ -67,11 +67,22 @@ def mutate(child, mutation_rate):
     
 
 def save_results(experiment_name, gen, best, mean, std):
+    """Save results to csv and print them."""
     print(f'\n GENERATION {gen} best: {round(best,6)} mean: {round(mean,6)} std: {round(std,6)}')
 
     # Save results using pandas
-    df = pd.DataFrame({'gen': [gen], 'best': [best], 'mean': [mean], 'std': [std]})
-    df.to_csv(experiment_name+'/results.csv', mode='a', header=False, index=False)
+    # Load csv if it exists
+    if os.path.exists(experiment_name+'/results.csv'):
+        df = pd.read_csv(experiment_name+'/results.csv')
+    else:
+        df = pd.DataFrame(columns=['gen', 'best', 'mean', 'std'])
+
+    # Add new row
+    df = df.append({'gen': gen, 'best': best, 'mean': mean, 'std': std}, ignore_index=True)
+    df['gen'] = df['gen'].astype(int)
+
+    # Save to csv
+    df.to_csv(experiment_name+'/results.csv', index=False)
 
 
 def load_population(experiment_name,
@@ -258,7 +269,7 @@ if __name__ == '__main__':
     if not TESTING:
         main(
             experiment_name=experiment_name, n_hidden_neurons=n_hidden_neurons,
-            gens=10,
+            gens=15,
         )
     else:
         run_test(experiment_name=experiment_name, n_hidden_neurons=n_hidden_neurons)
