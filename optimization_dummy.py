@@ -263,18 +263,17 @@ if __name__ == '__main__':
     experiment_name = f'optimization_test_{enemies}'
     n_hidden_neurons = 10
 
-    TESTING = True
+    RUN_EVOLUTION = True
 
     # Track time
-    start_time = time.time()
-    if not TESTING:
+    if RUN_EVOLUTION:
+        start_time = time.time()
         main(
             experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons,
-            gens=15,
+            gens=10,
         )
-    else:
-        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons)
-
-    # Print time in minutes and seconds
-    print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
-    print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
+        # Print time in minutes and seconds
+        print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
+        print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
+    
+    run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons)
