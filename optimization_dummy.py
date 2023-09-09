@@ -259,7 +259,7 @@ def run_test(experiment_name, enemies, n_hidden_neurons):
 if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
     # These are used for both the evolution and the test
-    enemies = [1]
+    enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
     experiment_name = f'optimization_test_{enemies}'
     n_hidden_neurons = 10
 
@@ -275,5 +275,5 @@ if __name__ == '__main__':
         # Print time in minutes and seconds
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
         print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
-    
-    run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons)
+    else:
+        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons)
