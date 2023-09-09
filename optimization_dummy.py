@@ -25,7 +25,7 @@ def simulation(env,x):
 def evaluate(env, x):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
-    return np.array(list(map(lambda y: simulation(env,y), x)))
+    return np.array([simulation(env, individual) for individual in x])
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -104,7 +104,7 @@ def load_population(experiment_name,
 
         # Get last gen number from csv
         df = pd.read_csv(experiment_name+'/results.csv')
-        gen = df['gen'].iloc[-1]
+        gen = df['gen'].iloc[-1]+1
     else:
         print('Initializing new population...')
 
@@ -198,8 +198,13 @@ def main(
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
+    multi = "no"
+    if len(enemies) > 1:
+        multi = "yes"
+
     # initializes simulation in individual evolution mode, for single static enemy.
     env = Environment(experiment_name=experiment_name,
+                    multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
                     player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
@@ -243,13 +248,20 @@ def run_test(experiment_name, enemies, n_hidden_neurons):
 
     print('\nRunning best solution:\n')
 
+    multi = "no"
+    speed = "normal"
+    if len(enemies) > 1:
+        multi = "yes"
+        # speed = "fastest"
+
     env = Environment(experiment_name=experiment_name,
+                    multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
                     player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
-                    speed="normal",
+                    speed=speed,
                     visuals=True)
     
     fitness = evaluate(env, [best_solution])
@@ -259,7 +271,7 @@ def run_test(experiment_name, enemies, n_hidden_neurons):
 if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
     # These are used for both the evolution and the test
-    enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
+    enemies = [1,2,3,4,5,6,7,8] # [1, 2, 3, 4, 5, 6, 7, 8]
     experiment_name = f'optimization_test_{enemies}'
     n_hidden_neurons = 10
 
