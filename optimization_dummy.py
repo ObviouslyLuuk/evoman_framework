@@ -83,7 +83,7 @@ def load_population(experiment_name,
     """Load population from file if it exists. Otherwise initialize new population.
     experiment_name is the name of the experiment."""
     # If population file exists
-    if os.path.exists(experiment_name+'/population.npy'):
+    if os.path.exists(experiment_name+'/results.csv'):
         print('Loading population...')
 
         # Load population
@@ -170,20 +170,19 @@ def evolution_step(env, pop, pfit, mutation_rate):
 
 
 def main(
+        experiment_name = 'optimization_test',
         n_hidden_neurons = 10,
         domain_upper = 1,
         domain_lower = -1,
         pop_size = 100,
         gens = 100,
         mutation_rate = 0.2,
+        headless = True,
 ):
     # choose this for not using visuals and thus making experiments faster
-    headless = True
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-
-    experiment_name = 'optimization_test'
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
@@ -228,10 +227,41 @@ def main(
     env.state_to_log() # checks environment state
 
 
+def run_test(experiment_name, n_hidden_neurons):
+    best_solution = np.loadtxt(f'{experiment_name}/best.txt')
+
+    print('\nRunning best solution:\n')
+
+    env = Environment(experiment_name=experiment_name,
+                    enemies=[2],
+                    playermode="ai",
+                    player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
+                    enemymode="static",
+                    level=2,
+                    speed="normal",
+                    visuals=True)
+    
+    fitness = evaluate(env, [best_solution])
+    print(f'Fitness: {fitness}')
+
+
 if __name__ == '__main__':
+    # Set experiment name and number of hidden neurons
+    # These are used for both the evolution and the test
+    experiment_name = 'optimization_test'
+    n_hidden_neurons = 10
+
+    TESTING = False
+
     # Track time
     start_time = time.time()
-    main()
+    if not TESTING:
+        main(
+            experiment_name=experiment_name, n_hidden_neurons=n_hidden_neurons,
+            gens=10,
+        )
+    else:
+        run_test(experiment_name=experiment_name, n_hidden_neurons=n_hidden_neurons)
 
     # Print time in minutes and seconds
     print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
