@@ -259,7 +259,7 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method):
+def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, fitness_method):
     best_solution = np.loadtxt(f'{RESULTS_DIR}/{experiment_name}/best.txt')
 
     print('\nRunning best solution:\n')
@@ -280,7 +280,7 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method):
                     speed=speed,
                     visuals=True)
     
-    fitness = evaluate(env, [best_solution])
+    fitness = evaluate(env, [best_solution], fitness_method=fitness_method)
     print(f'Fitness: {fitness}')
 
 
