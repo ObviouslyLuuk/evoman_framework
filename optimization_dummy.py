@@ -17,7 +17,49 @@ from custom_controller import player_controller
 import numpy as np
 import os
 
+# from concurrent.futures import ThreadPoolExecutor
+import threading
+# from multiprocessing import Pool
+
 RESULTS_DIR = 'results'
+
+def evaluate_multiprocess(env, x, fitness_method='balanced'):
+    """Returns fitnesses for population x in an array.
+    x is a numpy array of individuals"""
+    # with ThreadPoolExecutor(max_workers=3) as executor:
+    #     futures = [executor.submit(env.play, individual) for individual in x]
+    #     fs, ps, es, ts = zip(*[future.result() for future in futures])
+    # Threading
+    fs = []
+    ps = []
+    es = []
+    ts = []
+    lock = threading.Lock()
+    def simulation_thread(individual):
+        f,p,e,t = env.play(pcont=individual)
+        with lock:
+            fs.append(f)
+            ps.append(p)
+            es.append(e)
+            ts.append(t)
+    threads = []
+    for individual in x:
+        t = threading.Thread(target=simulation_thread, args=(individual,))
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
+
+    if fitness_method == 'balanced':
+        # Make np arrays
+        fs = np.array(fs)
+        ps = np.array(ps)
+        es = np.array(es)
+        ts = np.array(ts)
+
+        # Calculate fitnesses
+        fs = .5*(100-es) + .5*ps - np.log(ts+1)
+    return np.array(fs)
 
 def simulation(env, x, fitness_method='balanced'):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
@@ -26,9 +68,11 @@ def simulation(env, x, fitness_method='balanced'):
         f = .5*(100-e) + .5*p - np.log(t+1)
     return f
 
-def evaluate(env, x, fitness_method='balanced'):
+def evaluate(env, x, fitness_method='balanced', multiprocess=True):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
+    if multiprocess:
+        return evaluate_multiprocess(env, x, fitness_method)
     return np.array([simulation(env, individual, fitness_method) for individual in x])
 
 def normalize_pop_fitness(pfit):

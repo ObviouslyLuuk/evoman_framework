@@ -274,7 +274,7 @@ class Layer(object):
 
         return layer
 
-    def update(self, dt, *args):
+    def update(self, dt, *args, **kwargs):
         pass
 
     def set_view(self, x, y, w, h, viewport_ox=0, viewport_oy=0):
@@ -544,7 +544,7 @@ class ObjectLayer(object):
             layer.properties[name] = value
         return layer
 
-    def update(self, dt, *args):
+    def update(self, dt, *args, **kwargs):
         pass
 
     def set_view(self, x, y, w, h, viewport_ox=0, viewport_oy=0):
@@ -701,9 +701,9 @@ class TileMap(object):
         self.view_x, self.view_y = origin   # viewport offset
         self.viewport = Rect(origin, size)
 
-    def update(self, dt, *args):
+    def update(self, dt, *args, **kwargs):
         for layer in self.layers:
-            layer.update(dt, *args)
+            layer.update(dt, *args, **kwargs)
 
     def draw(self, screen):
         for layer in self.layers:

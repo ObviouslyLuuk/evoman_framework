@@ -41,10 +41,10 @@ class Enemy(pygame.sprite.Sprite):
         self.gun_cooldown = 0
 
 
-    def update(self, dt, game):
+    def update(self, dt, game, player, enemy, start, time, econt, sprite_e, tilemap, **kwargs):
 
 
-        if game.time==1:
+        if time==1:
             # puts enemy in random initial position
             if game.randomini == 'yes':
                 self.rect.x = numpy.random.choice([640,500,400,300])
@@ -77,7 +77,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
             # calls the controller providing game sensors
-            actions = game.enemy_controller.control(self.sensors.get(game), game.econt)
+            actions = game.enemy_controller.control(self.sensors.get(game), econt)
             if len(actions) < 4:
                 game.print_logs("ERROR: Enemy 1 controller must return 4 decision variables.")
                 sys.exit(0)
@@ -95,7 +95,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
         # if 'start game' is true
-        if game.start == 1:
+        if start == 1:
 
             self.timeenemy += 1 # increments enemy timer
 
@@ -149,33 +149,33 @@ class Enemy(pygame.sprite.Sprite):
                 self.timeenemy = 20
                 # puts the enemy turned to the player's direction
                 if game.enemymode == 'static':
-                    if game.player.rect.right < self.rect.left:
+                    if player.rect.right < self.rect.left:
                         self.direction = -1
-                    elif game.player.rect.left > self.rect.right:
+                    elif player.rect.left > self.rect.right:
                         self.direction = 1
                 else:
                     self.direction = self.direction * -1
 
             # checks collision of the player with the enemy
-            if self.rect.colliderect(game.player.rect):
+            if self.rect.colliderect(player.rect):
 
                 # choses what sprite penalise according to config
                 if game.contacthurt == "player":
-                    game.player.life = max(0, game.player.life-(game.level*1))
+                    player.life = max(0, player.life-(game.level*1))
                 if game.contacthurt == "enemy":
-                    game.enemy.life = max(0, game.enemy.life-(game.level*1))
+                    enemy.life = max(0, enemy.life-(game.level*1))
 
                 # pushes player when he collides with the enemy
-                game.player.rect.x +=  self.direction *  50 * dt
+                player.rect.x +=  self.direction *  50 * dt
 
                 # limits the player to stand on the screem space even being pushed
-                if game.player.rect.x < 60:
-                    game.player.rect.x = 60
-                if game.player.rect.x > 620:
-                    game.player.rect.x = 620
+                if player.rect.x < 60:
+                    player.rect.x = 60
+                if player.rect.x > 620:
+                    player.rect.x = 620
 
                 # sets flag to change the player image when he is hurt
-                game.player.hurt = 5
+                player.hurt = 5
 
             # gravity
             self.dy = min(400, self.dy + 100)
@@ -184,7 +184,7 @@ class Enemy(pygame.sprite.Sprite):
             # controls screen walls and platforms limits agaist enemy
             new = self.rect
             self.resting = 0
-            for cell in game.tilemap.layers['triggers'].collide(new, 'blockers'):
+            for cell in tilemap.layers['triggers'].collide(new, 'blockers'):
 
                 blockers = cell['blockers']
 
@@ -223,15 +223,15 @@ class Enemy(pygame.sprite.Sprite):
 
                     if self.direction > 0:
                         ax = [-24,50,1,1]
-                        self.twists.append(Bullet_e3((self.rect.x+ax[i],self.rect.y-ay[i]), 1, 'h', len(self.twists), game.sprite_e,visuals=self.visuals))
+                        self.twists.append(Bullet_e3((self.rect.x+ax[i],self.rect.y-ay[i]), 1, 'h', len(self.twists), sprite_e,visuals=self.visuals))
                     else:
                         ax = [25,-50,-7,-7]
-                        self.twists.append(Bullet_e3((self.rect.x-ax[i],self.rect.y-ay[i]), -1, 'h', len(self.twists), game.sprite_e,visuals=self.visuals))
+                        self.twists.append(Bullet_e3((self.rect.x-ax[i],self.rect.y-ay[i]), -1, 'h', len(self.twists), sprite_e,visuals=self.visuals))
 
                 # shoots 4 bullets placed in fixed places - bullets coming from the top of the screen
                 aux = 100
                 for i in range (0,4):
-                    self.twists.append(Bullet_e3((aux,100), 1, 'v',len(self.twists),game.sprite_e,visuals=self.visuals))
+                    self.twists.append(Bullet_e3((aux,100), 1, 'v',len(self.twists),sprite_e,visuals=self.visuals))
                     aux = aux + 150
 
             # decreases time for bullets limitation
@@ -280,10 +280,10 @@ class Bullet_e3(pygame.sprite.Sprite):
 
 
 
-    def update(self, dt, game):
+    def update(self, dt, game, player, enemy, time, **kwargs):
 
         if self.visuals:
-            if game.time%2==0:
+            if time%2==0:
                 self.image = pygame.image.load('evoman/images/met.png')
             else:
                 self.image = pygame.image.load('evoman/images/met2.png')
@@ -295,7 +295,7 @@ class Bullet_e3(pygame.sprite.Sprite):
         # removes bullets objetcs when they transpass the screen limits
         if self.rect.right < 1 or self.rect.left>736 or self.rect.bottom < 1  or self.rect.top > 512:
             self.kill()
-            game.enemy.twists[self.n_twist] = None
+            enemy.twists[self.n_twist] = None
             return
 
         # moves the bullets
@@ -315,28 +315,28 @@ class Bullet_e3(pygame.sprite.Sprite):
                     self.swingtime = 0
 
         # checks collision of enemy's bullet with the player
-        if self.rect.colliderect(game.player.rect):
+        if self.rect.colliderect(player.rect):
 
             # player loses life points, accoring to the difficult level of the game (the more difficult, the more it loses).
-            game.player.life = max(0, game.player.life-(game.level*1))
+            player.life = max(0, player.life-(game.level*1))
 
             # pushes player when he collides with the enemy
-            game.player.rect.x +=  self.direction *  100 * dt
+            player.rect.x +=  self.direction *  100 * dt
 
             # limits the player to stand on the screen space even being pushed.
-            if game.player.rect.x < 60:
-                game.player.rect.x = 60
-            if game.player.rect.x > 620:
-                game.player.rect.x = 620
+            if player.rect.x < 60:
+                player.rect.x = 60
+            if player.rect.x > 620:
+                player.rect.x = 620
 
             # sets flag to change the player image when he is hurt
-            game.player.hurt = 5
+            player.hurt = 5
 
         # removes player's bullets when colliding with enemy's bullets
         aux = 0
-        for t in game.player.twists:
+        for t in player.twists:
             if t != None:
                 if self.rect.colliderect(t.rect):
                     t.kill()
-                    game.player.twists[aux] = None
+                    player.twists[aux] = None
             aux += 1

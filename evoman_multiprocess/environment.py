@@ -4,6 +4,7 @@
 # karine.smiras@gmail.com      #
 ################################
 
+import copy
 import sys
 import gzip
 import pickle
@@ -11,11 +12,11 @@ import numpy
 import pygame
 from pygame.locals import *
 import struct
-import evoman.tmx as tmx
+import evoman_multiprocess.tmx as tmx
 
-from evoman.player import *
+from evoman_multiprocess.player import *
 from evoman.controller import Controller
-from evoman.sensors import Sensors
+from evoman_multiprocess.sensors import Sensors
 
 
 # main class
@@ -77,7 +78,7 @@ class Environment(object):
         self.use_joystick = use_joystick
 
         self.visuals = visuals
-        self.enemyImports = {self.enemyn: __import__('evoman.enemy'+str(self.enemyn), fromlist=['enemy'+str(self.enemyn)])}
+        self.enemyImports = {e: __import__('evoman_multiprocess.enemy'+str(e), fromlist=['enemy'+str(e)]) for e in enemies}
 
 
 
@@ -127,31 +128,28 @@ class Environment(object):
         pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP]) # enables only needed events
 
 
-        self.load_sprites()
-
-
 
     def load_sprites(self):
 
         # loads enemy and map
-        if not self.enemyn in self.enemyImports:
-            self.enemyImports[self.enemyn] = __import__('evoman.enemy'+str(self.enemyn), fromlist=['enemy'+str(self.enemyn)])
-        enemy = self.enemyImports[self.enemyn]
-        self.tilemap = tmx.load(enemy.tilemap, self.screen.get_size())  # map
+        enemy_module = self.enemyImports[self.enemyn]
+        tilemap = tmx.load(enemy_module.tilemap, self.screen.get_size())  # map
 
-        self.sprite_e = tmx.SpriteLayer()
-        start_cell = self.tilemap.layers['triggers'].find('enemy')[0]
-        self.enemy = enemy.Enemy((start_cell.px, start_cell.py), self.sprite_e, visuals=self.visuals)
-        self.tilemap.layers.append(self.sprite_e)  # enemy
+        sprite_e = tmx.SpriteLayer()
+        start_cell = tilemap.layers['triggers'].find('enemy')[0]
+        enemy = enemy_module.Enemy((start_cell.px, start_cell.py), sprite_e, visuals=self.visuals)
+        tilemap.layers.append(sprite_e)  # enemy
 
         # loads player
-        self.sprite_p = tmx.SpriteLayer()
-        start_cell = self.tilemap.layers['triggers'].find('player')[0]
-        self.player = Player((start_cell.px, start_cell.py), self.enemyn, self.level, self.sprite_p, visuals =self.visuals)
-        self.tilemap.layers.append(self.sprite_p)
+        sprite_p = tmx.SpriteLayer()
+        start_cell = tilemap.layers['triggers'].find('player')[0]
+        player = Player((start_cell.px, start_cell.py), self.enemyn, self.level, sprite_p, visuals =self.visuals)
+        tilemap.layers.append(sprite_p)
 
-        self.player.sensors = Sensors()
-        self.enemy.sensors = Sensors()
+        player.sensors = Sensors()
+        enemy.sensors = Sensors()
+
+        return tilemap, sprite_e, enemy, sprite_p, player
 
 
     # updates environment with backup of current solutions in simulation
@@ -188,13 +186,9 @@ class Environment(object):
 
     def get_num_sensors(self):
 
-        if hasattr(self, 'enemy') and self.enemymode == "ai":
-            return  len(self.enemy.sensors.get(self))
-        else:
-            if hasattr(self, 'player') and self.playermode == "ai":
-                return len(self.player.sensors.get(self))
-            else:
-                return 0
+        player = Player((0,0), self.enemyn, self.level, tmx.SpriteLayer(), visuals =self.visuals)
+        enemy = self.enemyImports[self.enemyn].Enemy((0,0), tmx.SpriteLayer(), visuals=self.visuals)
+        return Sensors().get(self, player, enemy).shape[0]
 
 
     # writes all variables related to game state into log
@@ -394,48 +388,42 @@ class Environment(object):
 
 
             # default fitness function for single solutions
-    def fitness_single(self):
-        return 0.9*(100 - self.get_enemylife()) + 0.1*self.get_playerlife() - numpy.log(self.get_time())
+    def fitness_single(self, player, enemy, time):
+        return 0.9*(100 - self.get_enemylife(enemy)) + 0.1*self.get_playerlife(player) - numpy.log(time+1)
 
     # default fitness function for consolidating solutions among multiple games
     def cons_multi(self,values):
         return values.mean() - values.std()
 
     # measures the energy of the player
-    def get_playerlife(self):
-        return self.player.life
+    def get_playerlife(self, player):
+        return player.life
 
     # measures the energy of the enemy
-    def get_enemylife(self):
-        return self.enemy.life
-
-    # gets run time
-    def get_time(self):
-        return self.time
+    def get_enemylife(self, enemy):
+        return enemy.life
 
 
     # runs game for a single enemy
     def run_single(self,enemyn,pcont,econt):
 
-        # sets controllers
-        self.pcont = pcont
-        self.econt = econt
+        # Make copy of controllers
+        player_controller = copy.deepcopy(self.player_controller)
+        enemy_controller = copy.deepcopy(self.enemy_controller)
 
         self.checks_params()
 
-
         self.enemyn = enemyn # sets the current enemy
         ends = 0
-        self.time = 0
-        self.freeze_p = False
-        self.freeze_e = False
-        self.start = False
+        time = 0
+        freeze_p = False
+        freeze_e = False
+        start = False
 
-        if not self.enemyn in self.enemyImports:
-            self.enemyImports[self.enemyn] = __import__('evoman.enemy'+str(self.enemyn), fromlist=['enemy'+str(self.enemyn)])
         enemy = self.enemyImports[self.enemyn]
 
-        self.load_sprites()
+        # load_sprites()
+        tilemap, sprite_e, enemy, sprite_p, player = self.load_sprites()
 
 
         # game main loop
@@ -459,46 +447,60 @@ class Environment(object):
 
 
             # game timer
-            self.time += 1
+            time += 1
             if self.playermode == "human" or self.sound == "on":
                 # sound effects
-                if self.sound == "on" and self.time == 1:
+                if self.sound == "on" and time == 1:
                     sound = pygame.mixer.Sound('evoman/sounds/open.wav')
                     c = pygame.mixer.Channel(1)
                     c.set_volume(1)
                     c.play(sound,loops=10)
 
-                if self.time > self.overturetime: # delays game start a little bit for human mode
-                    self.start = True
+                if time > self.overturetime: # delays game start a little bit for human mode
+                    start = True
             else:
-                self.start = True
+                start = True
 
 
             # checks screen closing button
-            self.event = pygame.event.get()
-            for event in  self.event:
-                if event.type == pygame.QUIT:
+            event = pygame.event.get()
+            for ev in event:
+                if ev.type == pygame.QUIT:
                     return
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
                     return
 
             # updates objects and draws its itens on screen
-            self.tilemap.update( 33 / 1000., self)
+            tilemap.update( 33 / 1000., 
+                           game=self, 
+                           player=player, 
+                           enemy=enemy, 
+                           start=start, 
+                           time=time, 
+                           pcont=pcont, 
+                           econt=econt, 
+                           sprite_p=sprite_p, 
+                           sprite_e=sprite_e, 
+                           freeze_p=freeze_p, 
+                           freeze_e=freeze_e, 
+                           tilemap=tilemap, 
+                           player_controller=player_controller, 
+                           enemy_controller=enemy_controller)
 
             if self.visuals:
                 
                 self.screen.fill((250,250,250))
-                self.tilemap.draw(self.screen)
+                tilemap.draw(self.screen)
 
                 # player life bar
-                vbar = int(100 *( 1-(self.player.life/float(self.player.max_life)) ))
+                vbar = int(100 *( 1-(player.life/float(player.max_life)) ))
                 pygame.draw.line(self.screen, (0,   0,   0), [40, 40],[140, 40], 2)
                 pygame.draw.line(self.screen, (0,   0,   0), [40, 45],[140, 45], 5)
                 pygame.draw.line(self.screen, (150,24,25),   [40, 45],[140 - vbar, 45], 5)
                 pygame.draw.line(self.screen, (0,   0,   0), [40, 49],[140, 49], 2)
 
                 # enemy life bar
-                vbar = int(100 *( 1-(self.enemy.life/float(self.enemy.max_life)) ))
+                vbar = int(100 *( 1-(enemy.life/float(enemy.max_life)) ))
                 pygame.draw.line(self.screen, (0,   0,   0), [590, 40],[695, 40], 2)
                 pygame.draw.line(self.screen, (0,   0,   0), [590, 45],[695, 45], 5)
                 pygame.draw.line(self.screen, (194,118,55),  [590, 45],[695 - vbar, 45], 5)
@@ -506,18 +508,18 @@ class Environment(object):
 
 
             #gets fitness for training agents
-            fitness = self.fitness_single()
+            fitness = self.fitness_single(player, enemy, time)
 
 
             # returns results of the run
             def return_run():
                 #self.print_logs("RUN: run status: enemy: "+str(self.enemyn)+"; fitness: " + str(fitness) + "; player life: " + str(self.player.life)  + "; enemy life: " + str(self.enemy.life) + "; time: " + str(self.time))
 
-                return  fitness, self.player.life, self.enemy.life, self.time
+                return  fitness, player.life, enemy.life, time
 
 
 
-            if self.start == False and self.playermode == "human":
+            if start == False and self.playermode == "human":
 
                 myfont = pygame.font.SysFont("Comic sams", 100)
                 pygame.font.Font.set_bold
@@ -527,7 +529,7 @@ class Environment(object):
 
 
             # checks player life status
-            if self.player.life == 0:
+            if player.life == 0:
                 ends -= 1
 
                 # tells user that player has lost
@@ -536,8 +538,8 @@ class Environment(object):
                     pygame.font.Font.set_bold
                     self.screen.blit(myfont.render(" Enemy wins", 1, (194,118,55)), (150, 180))
 
-                self.player.kill() # removes player sprite
-                self.enemy.kill()  # removes enemy sprite
+                player.kill() # removes player sprite
+                enemy.kill()  # removes enemy sprite
 
                 if self.playermode == "human":
                     # delays run finalization for human mode
@@ -548,11 +550,11 @@ class Environment(object):
 
 
             # checks enemy life status
-            if self.enemy.life == 0:
+            if enemy.life == 0:
                 ends -= 1
                 if self.visuals:
                     self.screen.fill((250,250,250))
-                    self.tilemap.draw(self.screen)
+                    tilemap.draw(self.screen)
 
                 # tells user that player has won
                 if self.playermode == "human":
@@ -560,8 +562,8 @@ class Environment(object):
 
                     self.screen.blit(myfont.render(" Player wins ", 1, (150,24,25) ), (170, 180))
 
-                self.enemy.kill()   # removes enemy sprite
-                self.player.kill()  # removes player sprite
+                enemy.kill()   # removes enemy sprite
+                player.kill()  # removes player sprite
 
                 if self.playermode == "human":
                     if ends == -self.overturetime:
@@ -571,10 +573,10 @@ class Environment(object):
 
 
             if self.loadplayer == "no":# removes player sprite from game
-                self.player.kill()
+                player.kill()
 
             if self.loadenemy == "no":  #removes enemy sprite from game
-                self.enemy.kill()
+                enemy.kill()
 
                 # updates screen
             if self.visuals:
@@ -582,13 +584,13 @@ class Environment(object):
 
 
             # game runtime limit
-            if self.playermode == 'ai':
-                if self.time >= enemy.timeexpire:
-                    return return_run()
+            # if self.playermode == 'ai':
+            #     if time >= enemy.timeexpire:
+            #         return return_run()
 
-            else:
-                if self.time >= self.timeexpire:
-                    return return_run()
+            # else:
+            if time >= self.timeexpire:
+                return return_run()
 
 
 

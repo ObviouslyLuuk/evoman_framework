@@ -29,33 +29,33 @@ class Bullet_p(pygame.sprite.Sprite):
 
             self.rect = pygame.rect.Rect(location, self.image.get_size())
 
-    def update(self, dt, game):
+    def update(self, dt, game, player, enemy, **kwargs):
 
         # removes bullets objetcs when they transpass the screen limits
         if self.rect.right < 1 or self.rect.left > 736 or self.rect.top < 1 or self.rect.bottom > 512:
             self.kill()
-            game.player.twists[self.n_twist] = None
+            player.twists[self.n_twist] = None
             return
 
         self.rect.x += self.direction * 600 * dt  # moving on the X axis (left or tight). It adds 600*dt forward at each general game loop loop iteration, where dt controls the frames limit.
 
         # checks collision of player's bullet with the enemy
-        if self.rect.colliderect(game.enemy.rect):
+        if self.rect.colliderect(enemy.rect):
 
             # if enemy is not imune
-            if game.enemy.imune == 0:
+            if enemy.imune == 0:
                 # enemy loses life points, according to the difficult level of the game (the more difficult, the less it loses)
-                game.enemy.life = max(0, game.enemy.life - (20 / game.level))
+                enemy.life = max(0, enemy.life - (20 / game.level))
 
                 if game.enemyn == 4:
                     # makes enemy imune to player's shooting.
-                    game.enemy.imune = 1
+                    enemy.imune = 1
 
             # removes the bullet off the screen after collision.
             self.kill()
-            game.player.twists[self.n_twist] = None
+            player.twists[self.n_twist] = None
 
-            game.enemy.hurt = 5
+            enemy.hurt = 5
 
 
 # player sprite
@@ -90,10 +90,10 @@ class Player(pygame.sprite.Sprite):
         self.hy = 0
         self.sensors = None
 
-    def update(self, dt, game):
+    def update(self, dt, game, player, enemy, start, time, pcont, freeze_p, tilemap, player_controller, sprite_p, **kwargs):
 
-        if game.freeze_p != 0 or game.start != 1:
-            game.tilemap.set_focus(self.rect.x, self.rect.y)
+        if freeze_p != 0 or start != 1:
+            tilemap.set_focus(self.rect.x, self.rect.y)
             return
         # if the enemies are not atacking with the freezing atack (prevents player from making any movements or atacking) and also the 'start game' marker is 1.
 
@@ -107,7 +107,7 @@ class Player(pygame.sprite.Sprite):
             self.vy = 1
             self.hy = -900
 
-        jump, left, release, right, shoot = self.get_input(game)
+        jump, left, release, right, shoot = self.get_input(game, time, pcont, player, enemy, player_controller)
 
         # if the button is released before the jumping maximum height, them player stops going up.
         if release == 1 and self.resting == 0:
@@ -145,10 +145,10 @@ class Player(pygame.sprite.Sprite):
         new = self.rect  # copies new (after movement) position state of the player
 
         # controls screen walls and platforms limits agaist player
-        self.check_blockers(game, last, new)
+        self.check_blockers(game, last, new, tilemap)
 
         # shoots, limiting time between bullets.
-        self.handle_shoot(game, shoot)
+        self.handle_shoot(game, shoot, sprite_p)
 
         # decreases time for limitating bullets
         self.gun_cooldown = max(0, self.gun_cooldown - dt)
@@ -159,12 +159,12 @@ class Player(pygame.sprite.Sprite):
         self.shooting = max(0, self.shooting)
 
         # kills player in case he touches killers stuff, like spikes.
-        for cell in game.tilemap.layers['triggers'].collide(self.rect, 'killers'):
-            game.player.life = 0
+        for cell in tilemap.layers['triggers'].collide(self.rect, 'killers'):
+            player.life = 0
 
         self.update_animation(game, new)
 
-    def get_input(self, game):
+    def get_input(self, game, time, pcont, player, enemy, player_controller):
         # defines game mode for player action
         if game.playermode == 'human':  # player controlled by keyboard/joystick
 
@@ -172,7 +172,7 @@ class Player(pygame.sprite.Sprite):
 
         elif game.playermode == 'ai':  # player controlled by AI algorithm
 
-            jump, left, release, right, shoot = self.ai_input(game)
+            jump, left, release, right, shoot = self.ai_input(game, time, pcont, player, enemy, player_controller)
         return jump, left, release, right, shoot
 
     def update_animation(self, game, new):
@@ -204,7 +204,7 @@ class Player(pygame.sprite.Sprite):
         if self.visuals:
             game.tilemap.set_focus(new.x, new.y)
 
-    def handle_shoot(self, game, shoot):
+    def handle_shoot(self, game, shoot, sprite_p):
         if shoot == 1 and not self.gun_cooldown:
 
             self.shooting = 5
@@ -213,11 +213,11 @@ class Player(pygame.sprite.Sprite):
             # creates bullets objects according to the direction.
             if self.direction > 0:
                 self.twists.append(
-                    Bullet_p(self.rect.midright, 1, len(self.twists), game.sprite_p, visuals=self.visuals))
+                    Bullet_p(self.rect.midright, 1, len(self.twists), sprite_p, visuals=self.visuals))
 
             else:
                 self.twists.append(
-                    Bullet_p(self.rect.midleft, -1, len(self.twists), game.sprite_p, visuals=self.visuals))
+                    Bullet_p(self.rect.midleft, -1, len(self.twists), sprite_p, visuals=self.visuals))
 
             self.gun_cooldown = 0.4  # marks time to the bullet for allowing next bullets
 
@@ -231,9 +231,9 @@ class Player(pygame.sprite.Sprite):
         else:
             self.atacked = 0
 
-    def check_blockers(self, game, last, new):
+    def check_blockers(self, game, last, new, tilemap):
         self.resting = 0
-        for cell in game.tilemap.layers['triggers'].collide(new, 'blockers'):
+        for cell in tilemap.layers['triggers'].collide(new, 'blockers'):
 
             blockers = cell['blockers']
 
@@ -301,11 +301,11 @@ class Player(pygame.sprite.Sprite):
             shoot = 1
         return jump, left, release, right, shoot
 
-    def ai_input(self, game):
-        if game.time == 1:
-            game.player_controller.set(game.pcont, len(self.sensors.get(game)))
+    def ai_input(self, game, time, pcont, player, enemy, player_controller):
+        if time == 1:
+            player_controller.set(pcont, len(self.sensors.get(game, player, enemy)))
         # calls the controller providing game sensors
-        actions = game.player_controller.control(self.sensors.get(game), game.pcont)
+        actions = player_controller.control(self.sensors.get(game, player, enemy), pcont)
         if len(actions) < 5:
             game.print_logs("ERROR: Player controller must return 5 decision variables.")
             sys.exit(0)
