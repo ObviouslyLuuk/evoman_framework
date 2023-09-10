@@ -272,8 +272,8 @@ if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
     # These are used for both the evolution and the test
     enemies = [1,2,3,4,5,6,7,8] # [1, 2, 3, 4, 5, 6, 7, 8]
-    experiment_name = f'optimization_test_{enemies}'
     n_hidden_neurons = 10
+    experiment_name = f'optimization_test_{enemies}_{n_hidden_neurons}'
 
     RUN_EVOLUTION = True
 
