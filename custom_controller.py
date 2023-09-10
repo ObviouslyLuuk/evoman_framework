@@ -11,6 +11,36 @@ import numpy as np
 def sigmoid_activation(x):
 	return 1./(1.+np.exp(-x))
 
+def sort_inputs_by_dist(inputs, projectile_x_dist_idx, projectile_y_dist_idx):
+	"""
+	Sorts projectiles by euclidean distance to player.
+	"""
+	euclid_dists = np.sqrt(inputs[projectile_x_dist_idx]**2 + inputs[projectile_y_dist_idx]**2)
+	euclid_dists[euclid_dists==0] = 1 # ignore non-existing projectiles
+
+	# Sort projectile x and y indices by euclidean distance
+	sorted_idx = np.argsort(euclid_dists)
+	sorted_x_idx = np.array(projectile_x_dist_idx)[sorted_idx]
+	sorted_y_idx = np.array(projectile_y_dist_idx)[sorted_idx]
+
+	# Interleave x and y indices
+	sorted_xy_idx = np.empty((sorted_x_idx.size + sorted_y_idx.size,), dtype=sorted_x_idx.dtype)
+	sorted_xy_idx[0::2] = sorted_x_idx
+	sorted_xy_idx[1::2] = sorted_y_idx
+
+	inputs[4:] = inputs[sorted_xy_idx]
+
+	# Print rounded euclidean distances
+	euclid_dists = np.sqrt(inputs[projectile_x_dist_idx]**2 + inputs[projectile_y_dist_idx]**2)
+	euclid_dists[euclid_dists==0] = 1 # ignore non-existing projectiles
+	# print(np.round(euclid_dists, 2))
+
+	# inputs[3] = 0 # ignore enemy direction
+	# inputs[12:] = 0 # ignore 4 furthest projectiles
+
+	return inputs
+
+
 def normalize_inputs(inputs, method="default"):
 	"""
 	default normalizes inputs between 0 and 1.
@@ -41,28 +71,7 @@ def normalize_inputs(inputs, method="default"):
 		inputs[y_dist_idx] = inputs[y_dist_idx]/512
 		inputs[[2, 3]] = inputs[[2, 3]]*np.abs(inputs).mean() # put less weight on player and enemy direction
 
-		# euclid_dists = np.sqrt(inputs[projectile_x_dist_idx]**2 + inputs[projectile_y_dist_idx]**2)
-		# euclid_dists[euclid_dists==0] = 1 # ignore non-existing projectiles
-
-		# # Sort projectile x and y indices by euclidean distance
-		# sorted_idx = np.argsort(euclid_dists)
-		# sorted_x_idx = np.array(projectile_x_dist_idx)[sorted_idx]
-		# sorted_y_idx = np.array(projectile_y_dist_idx)[sorted_idx]
-
-		# # Interleave x and y indices
-		# sorted_xy_idx = np.empty((sorted_x_idx.size + sorted_y_idx.size,), dtype=sorted_x_idx.dtype)
-		# sorted_xy_idx[0::2] = sorted_x_idx
-		# sorted_xy_idx[1::2] = sorted_y_idx
-
-		# inputs[4:] = inputs[sorted_xy_idx]
-
-		# # Print rounded euclidean distances
-		# # euclid_dists = np.sqrt(inputs[projectile_x_dist_idx]**2 + inputs[projectile_y_dist_idx]**2)
-		# # euclid_dists[euclid_dists==0] = 1 # ignore non-existing projectiles
-		# # print(np.round(euclid_dists, 2))
-
-		# inputs[3] = 0 # ignore enemy direction
-		# inputs[12:] = 0 # ignore 4 furthest projectiles
+		# inputs = sort_inputs_by_dist(inputs, projectile_x_dist_idx, projectile_y_dist_idx)
 
 		return inputs
 
