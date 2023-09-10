@@ -154,7 +154,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom'):
+def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom', pick_parent_method='greedy'):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -166,16 +166,26 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom'):
     # Create new population
     pop_new = np.zeros_like(pop)
     
-    # For each individual in the population
-    for i in range(len(pop)):
-        # Copy parent
-        child = pick_parent(pop, pfit_norm).copy()
+    if pick_parent_method != 'greedy':
+        # For each individual in the population
+        for i in range(len(pop)):
+            # Copy parent
+            child = pick_parent(pop, pfit_norm, pick_parent_method=pick_parent_method).copy()
+
+            # Mutate
+            child = mutate(child, mutation_rate)
+            
+            # Add to new population
+            pop_new[i] = child
+    else:
+        # Pick 10 best parents
+        best_parents = np.argsort(pfit_norm)[::-1][:10]
+
+        # Copy and repeat parents
+        pop_new = np.repeat(pop[best_parents], len(pop)/10, axis=0)
 
         # Mutate
-        child = mutate(child, mutation_rate)
-        
-        # Add to new population
-        pop_new[i] = child
+        pop_new = mutate(pop_new, mutation_rate)
 
     # Evaluate new population
     pfit_new = evaluate(env, pop_new, fitness_method=fitness_method)
@@ -293,7 +303,7 @@ if __name__ == '__main__':
     fitness_method = "custom" # "custom", "default"
     experiment_name = f'{enemies}_{n_hidden_neurons}_in-norm-{normalization_method}_f-{fitness_method}'
 
-    RUN_EVOLUTION = False
+    RUN_EVOLUTION = True
 
     # Track time
     if RUN_EVOLUTION:
