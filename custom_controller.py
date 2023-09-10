@@ -41,7 +41,7 @@ def sort_inputs_by_dist(inputs, projectile_x_dist_idx, projectile_y_dist_idx):
 	return inputs
 
 
-def normalize_inputs(inputs, method="default"):
+def normalize_inputs(inputs, method):
 	"""
 	default normalizes inputs between 0 and 1.
 	around_0 normalizes inputs between -1 and 1.
@@ -59,7 +59,7 @@ def normalize_inputs(inputs, method="default"):
 		return (inputs-min(inputs))/float((max(inputs)-min(inputs)))
 	elif method == "around_0":
 		return inputs/float(max(abs(inputs)))
-	elif method == "domain_specific":
+	elif "domain_specific" in method:
 		inputs = np.array(inputs)
 		e_x_dist_idx = [0]
 		e_y_dist_idx = [1]
@@ -71,7 +71,8 @@ def normalize_inputs(inputs, method="default"):
 		inputs[y_dist_idx] = inputs[y_dist_idx]/512
 		inputs[[2, 3]] = inputs[[2, 3]]*np.abs(inputs).mean() # put less weight on player and enemy direction
 
-		# inputs = sort_inputs_by_dist(inputs, projectile_x_dist_idx, projectile_y_dist_idx)
+		if "sort" in method:
+			inputs = sort_inputs_by_dist(inputs, projectile_x_dist_idx, projectile_y_dist_idx)
 
 		return inputs
 

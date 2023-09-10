@@ -18,14 +18,14 @@ from helpers import save_results, load_population, RESULTS_DIR
 import numpy as np
 import os
 
-def simulation(env, x, fitness_method='balanced'):
+def simulation(env, x, fitness_method):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     f,p,e,t = env.play(pcont=x)
     if fitness_method == 'balanced':
         f = .5*(100-e) + .5*p - np.log(t+1)
     return f
 
-def evaluate(env, x, fitness_method='balanced'):
+def evaluate(env, x, fitness_method):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
     return np.array([simulation(env, individual, fitness_method) for individual in x])
@@ -41,7 +41,7 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
-def pick_parent(pop, pfit, method='multinomial'):
+def pick_parent(pop, pfit, method):
     """Return a parent from the population, based on a tournament, or multinomial sampling.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
@@ -75,16 +75,16 @@ def mutate(child, mutation_rate):
     return child
     
 
-def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
+def select_survivors(pop, pfit, pop_size, best_idx, survivor_method):
     """Select survivors from population.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses.
     pop_size is the size of the population."""
-    if not probabilitic:
+    if survivor_method == 'greedy':
         idx = np.argsort(pfit)[::-1][:pop_size]
         pop = pop[idx]
         pfit = pfit[idx]
-    else:
+    elif survivor_method == 'multinomial':
         pfit_norm = normalize_pop_fitness(pfit)
         probs = pfit_norm / np.sum(pfit_norm)
         idx = np.random.choice(len(pop), size=pop_size, p=probs, replace=False)
@@ -95,7 +95,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate, fitness_method='balanced', pick_parent_method='multinomial'):
+def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -145,7 +145,7 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method='balanced', pic
     pfit_combined = np.append(pfit, pfit_new)
 
     # Select survivors
-    pop_new, pfit_new = select_survivors(pop_combined, pfit_combined, len(pop), np.argmax(pfit))
+    pop_new, pfit_new = select_survivors(pop_combined, pfit_combined, len(pop), np.argmax(pfit), survivor_method)
     
     # Return new population and fitnesses
     return pop_new, pfit_new
@@ -162,6 +162,8 @@ def main(
         mutation_rate = 0.2,
         normalization_method = "domain_specific",
         fitness_method = "balanced",
+        pick_parent_method = "multinomial",
+        survivor_method = "greedy",
         headless = True,
 ):
     kwarg_dict = locals()
@@ -200,7 +202,7 @@ def main(
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
-        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, fitness_method=fitness_method)
+        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, fitness_method=fitness_method, pick_parent_method=pick_parent_method, survivor_method=survivor_method)
         
         # Get stats
         best_idx = np.argmax(pfit)
