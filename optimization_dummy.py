@@ -10,7 +10,7 @@ import sys
 import pandas as pd
 import time
 
-from evoman.environment import Environment
+from evoman_multiprocess.environment import Environment
 from custom_controller import player_controller
 
 # imports other libs
