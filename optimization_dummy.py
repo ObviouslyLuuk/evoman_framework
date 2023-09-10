@@ -11,11 +11,13 @@ import pandas as pd
 import time
 
 from evoman.environment import Environment
-from demo_controller import player_controller
+from custom_controller import player_controller
 
 # imports other libs
 import numpy as np
 import os
+
+RESULTS_DIR = 'results'
 
 def simulation(env,x):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
@@ -72,8 +74,8 @@ def save_results(experiment_name, gen, best, mean, std):
 
     # Save results using pandas
     # Load csv if it exists
-    if os.path.exists(experiment_name+'/results.csv'):
-        df = pd.read_csv(experiment_name+'/results.csv')
+    if os.path.exists(f'{RESULTS_DIR}/{experiment_name}/results.csv'):
+        df = pd.read_csv(f'{RESULTS_DIR}/{experiment_name}/results.csv')
     else:
         df = pd.DataFrame(columns=['gen', 'best', 'mean', 'std'])
 
@@ -82,7 +84,7 @@ def save_results(experiment_name, gen, best, mean, std):
     df['gen'] = df['gen'].astype(int)
 
     # Save to csv
-    df.to_csv(experiment_name+'/results.csv', index=False)
+    df.to_csv(f'{RESULTS_DIR}/{experiment_name}/results.csv', index=False)
 
 
 def load_population(experiment_name,
@@ -90,11 +92,12 @@ def load_population(experiment_name,
                     domain_upper,
                     pop_size,
                     n_vars,
-                    env):
+                    env,
+                    continue_evo=True):
     """Load population from file if it exists. Otherwise initialize new population.
     experiment_name is the name of the experiment."""
     # If population file exists
-    if os.path.exists(experiment_name+'/results.csv'):
+    if os.path.exists(f'{RESULTS_DIR}/{experiment_name}/results.csv') and continue_evo:
         print('Loading population...')
 
         # Load population
@@ -103,7 +106,7 @@ def load_population(experiment_name,
         pfit = env.solutions[1]
 
         # Get last gen number from csv
-        df = pd.read_csv(experiment_name+'/results.csv')
+        df = pd.read_csv(f'{RESULTS_DIR}/{experiment_name}/results.csv')
         gen = df['gen'].iloc[-1]+1
     else:
         print('Initializing new population...')
@@ -189,32 +192,36 @@ def main(
         pop_size = 100,
         gens = 100,
         mutation_rate = 0.2,
+        normalization_method = "custom",
         headless = True,
 ):
     # choose this for not using visuals and thus making experiments faster
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-    if not os.path.exists(experiment_name):
-        os.makedirs(experiment_name)
+    if not os.path.exists(f'{RESULTS_DIR}/{experiment_name}'):
+        os.makedirs(f'{RESULTS_DIR}/{experiment_name}')
 
     multi = "no"
     if len(enemies) > 1:
         multi = "yes"
 
     # initializes simulation in individual evolution mode, for single static enemy.
-    env = Environment(experiment_name=experiment_name,
+    env = Environment(experiment_name=f'{RESULTS_DIR}/{experiment_name}',
                     multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
+                    player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="fastest",
                     visuals=False)
 
     # number of weights for multilayer with 10 hidden neurons
-    n_vars = (env.get_num_sensors()+1)*n_hidden_neurons + (n_hidden_neurons+1)*5
+    if n_hidden_neurons > 0:
+        n_vars = (env.get_num_sensors()+1)*n_hidden_neurons + (n_hidden_neurons+1)*5
+    else:
+        n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
     pop, pfit, start_gen, best_idx, mean, std = load_population(experiment_name, domain_lower, domain_upper, pop_size, n_vars, env)
@@ -234,7 +241,7 @@ def main(
         save_results(experiment_name, gen, best, mean, std)
     
         # Save best individual
-        np.savetxt(experiment_name+'/best.txt', pop[best_idx])
+        np.savetxt(f'{RESULTS_DIR}/{experiment_name}/best.txt', pop[best_idx])
         
         # Save environment
         env.update_solutions([pop, pfit])
@@ -243,8 +250,8 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(experiment_name, enemies, n_hidden_neurons):
-    best_solution = np.loadtxt(f'{experiment_name}/best.txt')
+def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method):
+    best_solution = np.loadtxt(f'{RESULTS_DIR}/{experiment_name}/best.txt')
 
     print('\nRunning best solution:\n')
 
@@ -254,11 +261,11 @@ def run_test(experiment_name, enemies, n_hidden_neurons):
         multi = "yes"
         # speed = "fastest"
 
-    env = Environment(experiment_name=experiment_name,
+    env = Environment(experiment_name=f'{RESULTS_DIR}/{experiment_name}',
                     multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
+                    player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed=speed,
@@ -271,21 +278,22 @@ def run_test(experiment_name, enemies, n_hidden_neurons):
 if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
     # These are used for both the evolution and the test
-    enemies = [1,2,3,4,5,6,7,8] # [1, 2, 3, 4, 5, 6, 7, 8]
+    enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
     n_hidden_neurons = 10
-    experiment_name = f'optimization_test_{enemies}_{n_hidden_neurons}'
+    normalization_method = "custom" # "default", "custom", "around_0"
+    experiment_name = f'{enemies}_{n_hidden_neurons}_input-normalization-{normalization_method}'
 
-    RUN_EVOLUTION = True
+    RUN_EVOLUTION = False
 
     # Track time
     if RUN_EVOLUTION:
         start_time = time.time()
         main(
-            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons,
-            gens=10,
+            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method,
+            gens=15,
         )
         # Print time in minutes and seconds
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
         print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
     else:
-        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons)
+        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method)

@@ -8,8 +8,9 @@ if __name__ == '__main__':
 
     # Run evolution for each set of enemies
     for enemies in enemy_sets:
-        experiment_name = f'optimization_test_{enemies}'
         n_hidden_neurons = 10
+        normalization_method = "custom" # "default", "custom", "around_0"
+        experiment_name = f'{enemies}_{n_hidden_neurons}_input-normalization-{normalization_method}'
 
         if RUN_EVOLUTION:
             start_time = time.time()
