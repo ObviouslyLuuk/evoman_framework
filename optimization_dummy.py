@@ -19,15 +19,17 @@ import os
 
 RESULTS_DIR = 'results'
 
-def simulation(env,x):
+def simulation(env, x, fitness_method='custom'):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     f,p,e,t = env.play(pcont=x)
+    if fitness_method == 'custom':
+        f = .5*(100-e) + .5*p - np.log(t+1)
     return f
 
-def evaluate(env, x):
+def evaluate(env, x, fitness_method='custom'):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
-    return np.array([simulation(env, individual) for individual in x])
+    return np.array([simulation(env, individual, fitness_method) for individual in x])
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -40,19 +42,25 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
-def pick_parent(pop, pfit):
-    """Return a parent from the population, based on a tournament.
+def pick_parent(pop, pfit, method='multinomial'):
+    """Return a parent from the population, based on a tournament, or multinomial sampling.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
-    # Pick 2 random parents
-    p1 = np.random.randint(0, len(pop))
-    p2 = np.random.randint(0, len(pop))
-    
-    # Return the best of the two
-    if pfit[p1] > pfit[p2]:
-        return pop[p1]
-    else:
-        return pop[p2]
+    if method == 'tournament':
+        # Pick 2 random parents
+        p1 = np.random.randint(0, len(pop))
+        p2 = np.random.randint(0, len(pop))
+        
+        # Return the best of the two
+        if pfit[p1] > pfit[p2]:
+            return pop[p1]
+        else:
+            return pop[p2]
+    elif method == 'multinomial':
+        pfit = normalize_pop_fitness(pfit)
+        pfit = pfit**2 # Square fitnesses to increase probability of picking best
+        pfit_distribution = pfit / np.sum(pfit)
+        return pop[np.random.choice(len(pop), p=pfit_distribution)]
     
 
 def mutate(child, mutation_rate):
@@ -146,7 +154,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate):
+def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom'):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -170,7 +178,7 @@ def evolution_step(env, pop, pfit, mutation_rate):
         pop_new[i] = child
 
     # Evaluate new population
-    pfit_new = evaluate(env, pop_new)
+    pfit_new = evaluate(env, pop_new, fitness_method=fitness_method)
     
     # Combine old and new population
     pop_combined = np.vstack((pop, pop_new))
@@ -193,6 +201,7 @@ def main(
         gens = 100,
         mutation_rate = 0.2,
         normalization_method = "custom",
+        fitness_method = "custom",
         headless = True,
 ):
     # choose this for not using visuals and thus making experiments faster
@@ -229,7 +238,7 @@ def main(
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
-        pop, pfit = evolution_step(env, pop, pfit, mutation_rate)
+        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, fitness_method=fitness_method)
         
         # Get stats
         best_idx = np.argmax(pfit)
@@ -281,7 +290,8 @@ if __name__ == '__main__':
     enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
     n_hidden_neurons = 10
     normalization_method = "custom" # "default", "custom", "around_0"
-    experiment_name = f'{enemies}_{n_hidden_neurons}_input-normalization-{normalization_method}'
+    fitness_method = "custom" # "custom", "default"
+    experiment_name = f'{enemies}_{n_hidden_neurons}_in-norm-{normalization_method}_f-{fitness_method}'
 
     RUN_EVOLUTION = False
 
@@ -289,11 +299,11 @@ if __name__ == '__main__':
     if RUN_EVOLUTION:
         start_time = time.time()
         main(
-            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method,
-            gens=15,
+            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method,
+            gens=30,
         )
         # Print time in minutes and seconds
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
         print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
     else:
-        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method)
+        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method)

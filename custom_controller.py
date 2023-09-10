@@ -35,6 +35,7 @@ def normalize_inputs(inputs, method="default"):
 		y_dist_idx = [1, 5, 7, 9, 11, 13, 15, 17, 19]
 		inputs[x_dist_idx] = inputs[x_dist_idx]/736
 		inputs[y_dist_idx] = inputs[y_dist_idx]/512
+		inputs[[2, 3]] = inputs[[2, 3]]*np.abs(inputs).mean() # put less weight on player and enemy direction
 		return inputs
 
 # implements controller structure for player
