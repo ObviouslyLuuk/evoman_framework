@@ -29,13 +29,41 @@ def normalize_inputs(inputs, method="default"):
 		return (inputs-min(inputs))/float((max(inputs)-min(inputs)))
 	elif method == "around_0":
 		return inputs/float(max(abs(inputs)))
-	elif method == "custom":
+	elif method == "domain_specific":
 		inputs = np.array(inputs)
-		x_dist_idx = [0, 4, 6, 8, 10, 12, 14, 16, 18]
-		y_dist_idx = [1, 5, 7, 9, 11, 13, 15, 17, 19]
+		e_x_dist_idx = [0]
+		e_y_dist_idx = [1]
+		projectile_x_dist_idx = [4, 6, 8, 10, 12, 14, 16, 18]
+		projectile_y_dist_idx = [5, 7, 9, 11, 13, 15, 17, 19]
+		x_dist_idx = np.concatenate((e_x_dist_idx, projectile_x_dist_idx))
+		y_dist_idx = np.concatenate((e_y_dist_idx, projectile_y_dist_idx))
 		inputs[x_dist_idx] = inputs[x_dist_idx]/736
 		inputs[y_dist_idx] = inputs[y_dist_idx]/512
 		inputs[[2, 3]] = inputs[[2, 3]]*np.abs(inputs).mean() # put less weight on player and enemy direction
+
+		# euclid_dists = np.sqrt(inputs[projectile_x_dist_idx]**2 + inputs[projectile_y_dist_idx]**2)
+		# euclid_dists[euclid_dists==0] = 1 # ignore non-existing projectiles
+
+		# # Sort projectile x and y indices by euclidean distance
+		# sorted_idx = np.argsort(euclid_dists)
+		# sorted_x_idx = np.array(projectile_x_dist_idx)[sorted_idx]
+		# sorted_y_idx = np.array(projectile_y_dist_idx)[sorted_idx]
+
+		# # Interleave x and y indices
+		# sorted_xy_idx = np.empty((sorted_x_idx.size + sorted_y_idx.size,), dtype=sorted_x_idx.dtype)
+		# sorted_xy_idx[0::2] = sorted_x_idx
+		# sorted_xy_idx[1::2] = sorted_y_idx
+
+		# inputs[4:] = inputs[sorted_xy_idx]
+
+		# # Print rounded euclidean distances
+		# # euclid_dists = np.sqrt(inputs[projectile_x_dist_idx]**2 + inputs[projectile_y_dist_idx]**2)
+		# # euclid_dists[euclid_dists==0] = 1 # ignore non-existing projectiles
+		# # print(np.round(euclid_dists, 2))
+
+		# inputs[3] = 0 # ignore enemy direction
+		# inputs[12:] = 0 # ignore 4 furthest projectiles
+
 		return inputs
 
 # implements controller structure for player

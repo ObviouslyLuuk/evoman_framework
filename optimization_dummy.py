@@ -19,14 +19,14 @@ import os
 
 RESULTS_DIR = 'results'
 
-def simulation(env, x, fitness_method='custom'):
+def simulation(env, x, fitness_method='balanced'):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     f,p,e,t = env.play(pcont=x)
-    if fitness_method == 'custom':
+    if fitness_method == 'balanced':
         f = .5*(100-e) + .5*p - np.log(t+1)
     return f
 
-def evaluate(env, x, fitness_method='custom'):
+def evaluate(env, x, fitness_method='balanced'):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
     return np.array([simulation(env, individual, fitness_method) for individual in x])
@@ -154,7 +154,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom', pick_parent_method='greedy'):
+def evolution_step(env, pop, pfit, mutation_rate, fitness_method='balanced', pick_parent_method='multinomial'):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -162,15 +162,24 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom', pick_
     mutation_rate is the mutation rate."""
     # Normalize fitnesses
     pfit_norm = normalize_pop_fitness(pfit)
+
+    # Print amount of duplicates
+    duplicates = len(pfit) - len(np.unique(pfit))
+    print(f'Amount of duplicate fitnesses: {duplicates}')
+    # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
     
     # Create new population
     pop_new = np.zeros_like(pop)
     
+    # Add random individuals
+    add_amount = int(len(pop) / 10)
+    pop_new[-add_amount:] = np.random.uniform(-1, 1, size=(add_amount, pop.shape[1]))
+    
     if pick_parent_method != 'greedy':
         # For each individual in the population
-        for i in range(len(pop)):
+        for i in range(len(pop)-add_amount):
             # Copy parent
-            child = pick_parent(pop, pfit_norm, pick_parent_method=pick_parent_method).copy()
+            child = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
 
             # Mutate
             child = mutate(child, mutation_rate)
@@ -182,7 +191,7 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method='custom', pick_
         best_parents = np.argsort(pfit_norm)[::-1][:10]
 
         # Copy and repeat parents
-        pop_new = np.repeat(pop[best_parents], len(pop)/10, axis=0)
+        pop_new[:-add_amount] = np.repeat(pop[best_parents], int((len(pop)-add_amount)/10), axis=0)
 
         # Mutate
         pop_new = mutate(pop_new, mutation_rate)
@@ -210,8 +219,8 @@ def main(
         pop_size = 100,
         gens = 100,
         mutation_rate = 0.2,
-        normalization_method = "custom",
-        fitness_method = "custom",
+        normalization_method = "domain_specific",
+        fitness_method = "balanced",
         headless = True,
 ):
     # choose this for not using visuals and thus making experiments faster
@@ -299,9 +308,9 @@ if __name__ == '__main__':
     # These are used for both the evolution and the test
     enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
     n_hidden_neurons = 10
-    normalization_method = "custom" # "default", "custom", "around_0"
-    fitness_method = "custom" # "custom", "default"
-    experiment_name = f'{enemies}_{n_hidden_neurons}_in-norm-{normalization_method}_f-{fitness_method}'
+    normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
+    fitness_method = "balanced" # "balanced", "default"
+    experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
 
     RUN_EVOLUTION = True
 
