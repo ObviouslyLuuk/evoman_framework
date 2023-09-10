@@ -12,7 +12,7 @@ import time
 
 from evoman.environment import Environment
 from custom_controller import player_controller
-from helpers import save_results, load_population, RESULTS_DIR
+from helpers import save_results, load_population, find_folder, RESULTS_DIR
 
 # imports other libs
 import numpy as np
@@ -172,15 +172,20 @@ def main(
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-    if not os.path.exists(f'{RESULTS_DIR}/{experiment_name}'):
-        os.makedirs(f'{RESULTS_DIR}/{experiment_name}')
+    # Find folder
+    use_folder, start_gen = find_folder(experiment_name, gens, kwarg_dict)
+
+    if not use_folder:
+        milliseconds = int(round(time.time() * 1000))
+        use_folder = f'{milliseconds}_{experiment_name}'
+        os.makedirs(f'{RESULTS_DIR}/{use_folder}')
 
     multi = "no"
     if len(enemies) > 1:
         multi = "yes"
 
     # initializes simulation in individual evolution mode, for single static enemy.
-    env = Environment(experiment_name=f'{RESULTS_DIR}/{experiment_name}',
+    env = Environment(experiment_name=f'{RESULTS_DIR}/{use_folder}',
                     multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
@@ -197,7 +202,7 @@ def main(
         n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
-    pop, pfit, start_gen, best_idx, mean, std = load_population(experiment_name, domain_lower, domain_upper, pop_size, n_vars, env, evaluate)
+    pop, pfit, best_idx, mean, std = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0)
 
     # For each generation
     for gen in range(start_gen, gens):
@@ -211,10 +216,10 @@ def main(
         std = np.std(pfit)
         
         # Save results
-        save_results(experiment_name, gen, best, mean, std, kwarg_dict)
+        save_results(use_folder, gen, best, mean, std, kwarg_dict)
     
         # Save best individual
-        np.savetxt(f'{RESULTS_DIR}/{experiment_name}/best.txt', pop[best_idx])
+        np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
         
         # Save environment
         env.update_solutions([pop, pfit])
@@ -224,7 +229,17 @@ def main(
 
 
 def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, fitness_method):
-    best_solution = np.loadtxt(f'{RESULTS_DIR}/{experiment_name}/best.txt')
+    # Check overview.csv for best solution
+    if not os.path.exists(f'{RESULTS_DIR}/overview.csv'):
+        print('overview.csv does not exist. Exiting...')
+        return
+    df = pd.read_csv(f'{RESULTS_DIR}/overview.csv')
+    if experiment_name not in df['experiment_name'].values:
+        print(f'Experiment {experiment_name} not in overview.csv. Exiting...')
+        return
+    folder = df[df['experiment_name'] == experiment_name]['folder'].values[0]
+
+    best_solution = np.loadtxt(f'{RESULTS_DIR}/{folder}/best.txt')
 
     print('\nRunning best solution:\n')
 
@@ -234,7 +249,7 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, f
         multi = "yes"
         # speed = "fastest"
 
-    env = Environment(experiment_name=f'{RESULTS_DIR}/{experiment_name}',
+    env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
                     multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
