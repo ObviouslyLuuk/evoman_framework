@@ -6,9 +6,11 @@ from helpers import RESULTS_DIR
 if __name__ == '__main__':
     enemy_sets = [[1], [2], [3], [4], [5], [6], [7], [8], [7,8]]
 
-    RUN_EVOLUTION = True
+    RUN_EVOLUTION = False
 
     runs_per_experiment = 10
+    if not RUN_EVOLUTION:
+        runs_per_experiment = 1
 
     for i in range(runs_per_experiment):
         print(f'\n\nRun {i+1} of {runs_per_experiment}\n\n')
@@ -19,12 +21,12 @@ if __name__ == '__main__':
             fitness_method = "balanced" # "balanced", "default"
             experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
 
-            logged_runs = [f for f in os.listdir(RESULTS_DIR) if '_'.join(f.split('_')[1:]) == experiment_name]
-            if len(logged_runs) >= runs_per_experiment:
-                print(f'Experiment {experiment_name} already run {runs_per_experiment} times, skipping')
-                continue
-
             if RUN_EVOLUTION:
+                logged_runs = [f for f in os.listdir(RESULTS_DIR) if '_'.join(f.split('_')[1:]) == experiment_name]
+                if len(logged_runs) >= runs_per_experiment:
+                    print(f'Experiment {experiment_name} already run {runs_per_experiment} times, skipping')
+                    continue
+
                 start_time = time.time()
                 main(
                     experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method,
