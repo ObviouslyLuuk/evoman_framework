@@ -7,6 +7,7 @@ Project by Alexander, Mamoune, Marisini, and Luuk
 Notes:
 - could be useful tracking the duplicate fitness scores to see how diverse the population is
 - look into randomini in the environment, for evolving?
+- for task II be mindful of whether they use their player_controller for the competition or not (this would affect whether we train with theirs or our own)
 inputs are limited in the following ways:
 - no info about where the player is on the map
 - no info about the map itself (like if there's a hill in front of the player)
