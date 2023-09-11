@@ -7,15 +7,15 @@
     "domain_upper": 1,
     "domain_lower": -1,
     "pop_size": 100,
-    "gens": 10,
+    "gens": 15,
     "mutation_rate": 0.2,
     "normalization_method": "domain_specific",
     "fitness_method": "balanced",
     "pick_parent_method": "multinomial",
     "survivor_method": "greedy",
     "headless": true,
-    "gen": 9,
+    "gen": 14,
     "best": 79.95499468596398,
-    "mean": 65.64894793453148,
-    "std": 4.021154710158026
+    "mean": 70.10969470513459,
+    "std": 2.6619818597762674
 }

@@ -2,15 +2,43 @@
 
 MESSAGE: Pygame initialized for simulation.
 
-MESSAGE: state has been saved to files.
+PARAMETER CHANGE: enemies = [3]
 
-MESSAGE: state has been saved to files.
+PARAMETER CHANGE: timeexpire = 3000
 
-MESSAGE: state has been saved to files.
+PARAMETER CHANGE: level = 2
 
-MESSAGE: state has been saved to files.
+PARAMETER CHANGE: enemyn = 3
 
-MESSAGE: state has been saved to files.
+PARAMETER CHANGE: overturetime = 100
+
+PARAMETER CHANGE: playermode = ai
+
+PARAMETER CHANGE: enemymode = static
+
+PARAMETER CHANGE: contacthurt = player
+
+PARAMETER CHANGE: clockprec = low
+
+PARAMETER CHANGE: inputscoded = no
+
+PARAMETER CHANGE: randomini = no
+
+PARAMETER CHANGE: multiplemode = no
+
+PARAMETER CHANGE: speed = fastest
+
+PARAMETER CHANGE: loadplayer = yes
+
+PARAMETER CHANGE: loadenemy = yes
+
+PARAMETER CHANGE: sound = off
+
+PARAMETER CHANGE: logs = on
+
+PARAMETER CHANGE: savelogs = yes
+
+MESSAGE: state has been loaded.
 
 MESSAGE: state has been saved to files.
 
