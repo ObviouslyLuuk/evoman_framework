@@ -3,10 +3,10 @@ import os
 import matplotlib.pyplot as plt
 from helpers import RESULTS_DIR
 
-def create_plot(experiment_name, save_png=False):
+def create_plot(experiment_name, figsize=(10,5), save_png=False):
     """
     Creates a plot of the fitness vs generation for the given folder.
-    One line for the best fitness, one for the mean fitness and a band for the standard deviation.
+    One line for the average best fitness, one for the average mean fitness and a band for the standard deviation of both.
     Data is aggregated from all the experiment's runs in different folders. Thus the lines are averaged over all runs.
     """
     # Find folders
@@ -21,17 +21,18 @@ def create_plot(experiment_name, save_png=False):
     min_len = min([len(df) for df in dfs])
     
     # Aggregate data
-    aggr_df = pd.concat(dfs).groupby('gen').mean() # Not sure whether to take the std of the mean or the mean of the std
+    aggr_df = pd.concat(dfs).groupby('gen').agg({'best': ['mean', 'std'], 'mean': ['mean', 'std']})
     aggr_df = aggr_df.iloc[:min_len] # Take shortest df
     
     # Plot gen vs best fitness
-    plt.figure(figsize=(10, 5))
-    plt.plot(aggr_df['best'], color='green')
-    plt.plot(aggr_df['mean'], color='orange')
-    plt.fill_between(range(len(aggr_df['mean'])), aggr_df['mean'] - aggr_df['std'], aggr_df['mean'] + aggr_df['std'], alpha=0.5, color='orange')
+    plt.figure(figsize=figsize)
+    plt.plot(aggr_df['best','mean'], color='green')
+    plt.plot(aggr_df['mean','mean'], color='orange')
+    plt.fill_between(range(len(aggr_df['best','mean'])), aggr_df['best','mean'] - aggr_df['best','std'], aggr_df['best','mean'] + aggr_df['best','std'], alpha=0.3, color='green')
+    plt.fill_between(range(len(aggr_df['mean','mean'])), aggr_df['mean','mean'] - aggr_df['mean','std'], aggr_df['mean','mean'] + aggr_df['mean','std'], alpha=0.3, color='orange')
 
     # Add legend
-    plt.legend(['Best', 'Mean', 'Std'])
+    plt.legend(['Avg Best', 'Avg Mean', 'Best Std', 'Mean Std'])
 
     plt.title('Fitness vs generation')
     plt.xlabel('Generation')
