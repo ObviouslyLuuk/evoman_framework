@@ -42,3 +42,11 @@ def create_plot(experiment_name, figsize=(10,5), save_png=False):
             os.makedirs(f'plots/{experiment_name}')
         plt.savefig(f'plots/{experiment_name}/plot.png')
     plt.show()
+
+def create_boxplot():
+    """
+    Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution.
+    Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
+    Can use the gain, default fitness, balanced fitness or number of wins as the metric.
+    """
+    pass

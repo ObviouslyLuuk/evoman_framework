@@ -44,6 +44,7 @@ def run_test(folder, enemies=None):
     return {
         "gain": gain,
         "fitness": fitness,
+        # TODO: Also add custom fitness function
         "wins": wins,
     }
 
@@ -55,6 +56,9 @@ if __name__ == "__main__":
     test_n = 5
 
     for folder in tqdm(results_folders):
+
+        # TODO: Skip run if already eval_best.json for the config.json gen
+
         test_results = []
         for i in range(test_n):
             test_results.append(run_test(folder))
