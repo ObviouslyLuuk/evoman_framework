@@ -1,7 +1,30 @@
 import pandas as pd
 import os
+import json
 import matplotlib.pyplot as plt
 from helpers import RESULTS_DIR
+
+def compare_config(config1, config2):
+    """Return True if the two configs are the same, False otherwise. Ignores gen, best, mean and std."""
+    ignore = ['gen', 'best', 'mean', 'std']
+    for key in config1:
+        if key in ignore:
+            continue
+        if config1[key] != config2[key]:
+            return False
+    return True
+
+def compare_configs(folders):
+    """Return list of folders with the same config."""
+    # Check if config.json is the same for all runs
+    with open(f'{RESULTS_DIR}/{folders[0]}/config.json', 'r') as f:
+        config = json.load(f)
+    for folder in folders:
+        with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+            if not compare_config(config, json.load(f)):
+                print(f'Config is different for folder {folder}, skipping')
+                folders.remove(folder)
+    return folders
 
 def create_plot(experiment_name, figsize=(10,5), save_png=False):
     """
@@ -12,6 +35,9 @@ def create_plot(experiment_name, figsize=(10,5), save_png=False):
     # Find folders
     experiment_folders = [f for f in os.listdir(RESULTS_DIR) if '_'.join(f.split('_')[1:]) == experiment_name]
     
+    # Check if config.json is the same for all runs
+    experiment_folders = compare_configs(experiment_folders)
+
     dfs = []
     for folder in experiment_folders:
         # Read data from csv file
@@ -43,10 +69,52 @@ def create_plot(experiment_name, figsize=(10,5), save_png=False):
         plt.savefig(f'plots/{experiment_name}/plot.png')
     plt.show()
 
-def create_boxplot():
+def create_boxplot(experiment_name, metric="gain", figsize=(10,5), save_png=False):
     """
-    Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution.
+    Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution in eval_best.json.
     Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
     Can use the gain, default fitness, balanced fitness or number of wins as the metric.
     """
-    pass
+    # Find folders
+    experiment_folders = [f for f in os.listdir(RESULTS_DIR) if '_'.join(f.split('_')[1:]) == experiment_name]
+    
+    # Check if config.json is the same for all runs
+    experiment_folders = compare_configs(experiment_folders)
+
+    eval_config = None
+
+    runs = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
+    for folder in experiment_folders:
+        # Create empty df with columns for [gain, fitness, fitness_balanced, n_wins]
+        df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
+
+        # Read results from eval_best.json
+        with open(f'{RESULTS_DIR}/{folder}/eval_best.json', 'r') as f:
+            saved = json.load(f)
+            if not eval_config:
+                eval_config = {k: saved[k] for k in saved if k != "results"}
+        for result in saved["results"]:
+            df = df.append(result, ignore_index=True)
+        # Turn wins list into number of wins
+        df['wins'] = df['wins'].apply(lambda x: sum(x))
+
+        # Average over the 5 evals
+        df = df.mean(axis=0)
+        runs = runs.append(df, ignore_index=True)
+    # print(runs)
+    print(eval_config)
+
+    # Plot boxplot
+    plt.figure(figsize=figsize)
+    plt.boxplot(runs[metric])
+    plt.title(f'{metric.capitalize()} boxplot')
+
+    plt.xlabel('Method')
+    plt.ylabel(metric.capitalize())
+    if save_png:
+        if not os.path.exists(f'plots/{experiment_name}'):
+            os.makedirs(f'plots/{experiment_name}')
+        plt.savefig(f'plots/{experiment_name}/{metric}_boxplot.png')
+    plt.show()
+
+
