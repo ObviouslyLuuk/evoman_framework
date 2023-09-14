@@ -1,42 +1,55 @@
-[
-    {
-        "gain": -52.99999999999972,
-        "fitness": 3.466610511272478,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -52.99999999999972,
-        "fitness": 3.466610511272478,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -52.99999999999972,
-        "fitness": 3.466610511272478,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -52.99999999999972,
-        "fitness": 3.466610511272478,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -52.99999999999972,
-        "fitness": 3.466610511272478,
-        "wins": [
-            true,
-            false
-        ]
-    }
-]
+{
+    "gen": 14,
+    "randomini": "no",
+    "enemies": [
+        7,
+        8
+    ],
+    "results": [
+        {
+            "gain": -52.99999999999972,
+            "fitness": 3.466610511272478,
+            "fitness_balanced": -0.5373342670185366,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -52.99999999999972,
+            "fitness": 3.466610511272478,
+            "fitness_balanced": -0.5373342670185366,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -52.99999999999972,
+            "fitness": 3.466610511272478,
+            "fitness_balanced": -0.5373342670185366,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -52.99999999999972,
+            "fitness": 3.466610511272478,
+            "fitness_balanced": -0.5373342670185366,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -52.99999999999972,
+            "fitness": 3.466610511272478,
+            "fitness_balanced": -0.5373342670185366,
+            "wins": [
+                true,
+                false
+            ]
+        }
+    ]
+}

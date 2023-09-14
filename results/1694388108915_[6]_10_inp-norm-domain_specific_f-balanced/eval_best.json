@@ -1,37 +1,49 @@
-[
-    {
-        "gain": -10.0,
-        "fitness": 75.03899466037673,
-        "wins": [
-            false
-        ]
-    },
-    {
-        "gain": -10.0,
-        "fitness": 75.03899466037673,
-        "wins": [
-            false
-        ]
-    },
-    {
-        "gain": -10.0,
-        "fitness": 75.03899466037673,
-        "wins": [
-            false
-        ]
-    },
-    {
-        "gain": -10.0,
-        "fitness": 75.03899466037673,
-        "wins": [
-            false
-        ]
-    },
-    {
-        "gain": -10.0,
-        "fitness": 75.03899466037673,
-        "wins": [
-            false
-        ]
-    }
-]
+{
+    "gen": 14,
+    "randomini": "no",
+    "enemies": [
+        6
+    ],
+    "results": [
+        {
+            "gain": -10.0,
+            "fitness": 75.03899466037673,
+            "fitness_balanced": 39.03642065638155,
+            "wins": [
+                false
+            ]
+        },
+        {
+            "gain": -10.0,
+            "fitness": 75.03899466037673,
+            "fitness_balanced": 39.03642065638155,
+            "wins": [
+                false
+            ]
+        },
+        {
+            "gain": -10.0,
+            "fitness": 75.03899466037673,
+            "fitness_balanced": 39.03642065638155,
+            "wins": [
+                false
+            ]
+        },
+        {
+            "gain": -10.0,
+            "fitness": 75.03899466037673,
+            "fitness_balanced": 39.03642065638155,
+            "wins": [
+                false
+            ]
+        },
+        {
+            "gain": -10.0,
+            "fitness": 75.03899466037673,
+            "fitness_balanced": 39.03642065638155,
+            "wins": [
+                false
+            ]
+        }
+    ]
+}

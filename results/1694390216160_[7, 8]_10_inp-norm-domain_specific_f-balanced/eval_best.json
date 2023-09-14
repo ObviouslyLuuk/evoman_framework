@@ -1,42 +1,55 @@
-[
-    {
-        "gain": -18.999999999999666,
-        "fitness": 12.102846132363261,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -18.999999999999666,
-        "fitness": 12.102846132363261,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -18.999999999999666,
-        "fitness": 12.102846132363261,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -18.999999999999666,
-        "fitness": 12.102846132363261,
-        "wins": [
-            true,
-            false
-        ]
-    },
-    {
-        "gain": -18.999999999999666,
-        "fitness": 12.102846132363261,
-        "wins": [
-            true,
-            false
-        ]
-    }
-]
+{
+    "gen": 14,
+    "randomini": "no",
+    "enemies": [
+        7,
+        8
+    ],
+    "results": [
+        {
+            "gain": -18.999999999999666,
+            "fitness": 12.102846132363261,
+            "fitness_balanced": 4.1001026464175085,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -18.999999999999666,
+            "fitness": 12.102846132363261,
+            "fitness_balanced": 4.1001026464175085,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -18.999999999999666,
+            "fitness": 12.102846132363261,
+            "fitness_balanced": 4.1001026464175085,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -18.999999999999666,
+            "fitness": 12.102846132363261,
+            "fitness_balanced": 4.1001026464175085,
+            "wins": [
+                true,
+                false
+            ]
+        },
+        {
+            "gain": -18.999999999999666,
+            "fitness": 12.102846132363261,
+            "fitness_balanced": 4.1001026464175085,
+            "wins": [
+                true,
+                false
+            ]
+        }
+    ]
+}

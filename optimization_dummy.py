@@ -18,11 +18,15 @@ from helpers import save_results, load_population, find_folder, RESULTS_DIR
 import numpy as np
 import os
 
+def fitness_balanced(player_life, enemy_life, time):
+    """Returns a balanced fitness, based on the player life, enemy life and time"""
+    return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
+
 def simulation(env, x, fitness_method):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     f,p,e,t = env.play(pcont=x)
     if fitness_method == 'balanced':
-        f = .5*(100-e) + .5*p - np.log(t+1)
+        f = fitness_balanced(p, e, t)
     return f
 
 def evaluate(env, x, fitness_method):
@@ -241,7 +245,7 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, f
 
     best_solution = np.loadtxt(f'{RESULTS_DIR}/{folder}/best.txt')
 
-    print('\nRunning best solution:\n')
+    print(f'\nRunning best solution for enemy {enemies}')
 
     multi = "no"
     speed = "normal"
@@ -259,8 +263,13 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, f
                     speed=speed,
                     visuals=True)
     
-    fitness = evaluate(env, [best_solution], fitness_method=fitness_method)
-    print(f'Fitness: {fitness}')
+    f,p,e,t = env.play(pcont=best_solution)
+    win_condition = e <= 0
+    win_str = 'WON' if win_condition else 'LOST'
+    print(win_str)
+    print(f'Fitness: {f}, player life: {p}, enemy life: {e}, time: {t}')
+    if fitness_method == 'balanced':
+        print(f'custom fitness: {fitness_balanced(p, e, t)}')
 
 
 if __name__ == '__main__':
