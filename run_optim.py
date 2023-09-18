@@ -19,6 +19,7 @@ if __name__ == '__main__':
             n_hidden_neurons = 10
             normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
             fitness_method = "balanced" # "balanced", "default"
+            randomini = "yes" # "yes", "no"
             experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
 
             if RUN_EVOLUTION:
@@ -29,11 +30,11 @@ if __name__ == '__main__':
 
                 start_time = time.time()
                 main(
-                    experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method,
+                    experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini,
                     gens=15,
                 )
                 # Print time in minutes and seconds
                 print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
                 print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
             else:
-                run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method)
+                run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini)

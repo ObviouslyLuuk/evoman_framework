@@ -168,6 +168,7 @@ def main(
         fitness_method = "balanced",
         pick_parent_method = "multinomial",
         survivor_method = "greedy",
+        randomini = "no",
         headless = True,
 ):
     kwarg_dict = locals()
@@ -197,7 +198,8 @@ def main(
                     enemymode="static",
                     level=2,
                     speed="fastest",
-                    visuals=False)
+                    visuals=False,
+                    randomini=randomini)
 
     # number of weights for multilayer with 10 hidden neurons
     if n_hidden_neurons > 0:
@@ -232,7 +234,7 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, fitness_method):
+def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, fitness_method, randomini):
     # Check overview.csv for best solution
     if not os.path.exists(f'{RESULTS_DIR}/overview.csv'):
         print('overview.csv does not exist. Exiting...')
@@ -261,7 +263,8 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, f
                     enemymode="static",
                     level=2,
                     speed=speed,
-                    visuals=True)
+                    visuals=True,
+                    randomini=randomini)
     
     f,p,e,t = env.play(pcont=best_solution)
     win_condition = e <= 0
@@ -279,6 +282,7 @@ if __name__ == '__main__':
     n_hidden_neurons = 10
     normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
     fitness_method = "balanced" # "balanced", "default"
+    randomini = "yes" # "yes", "no"
     experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
 
     RUN_EVOLUTION = True
@@ -287,11 +291,11 @@ if __name__ == '__main__':
     if RUN_EVOLUTION:
         start_time = time.time()
         main(
-            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method,
+            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini,
             gens=30,
         )
         # Print time in minutes and seconds
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
         print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
     else:
-        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method)
+        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini)

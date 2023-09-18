@@ -27,7 +27,7 @@ def run_test(folder, enemies=None, randomini="no"):
                         multiplemode="no",
                         enemies=[enemy],
                         playermode="ai",
-                        player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
+                        player_controller=player_controller(n_hidden_neurons, normalization_method), # you can insert your own controller here
                         enemymode="static",
                         level=2,
                         speed="fastest",
