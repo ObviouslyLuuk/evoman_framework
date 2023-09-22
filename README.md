@@ -27,6 +27,8 @@ inputs are limited in the following ways:
 - no info about the map itself (like if there's a hill in front of the player)
 
 Todo:
+- when using different fitness function, save both in the logs
+- automatically plot comparisons between methods
 - make plot legends and text larger
 - make box plots of those 5 tests (where each point represents a run, so the average of 5 tests), and run a t-test on the results
 

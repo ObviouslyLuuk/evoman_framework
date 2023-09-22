@@ -14,34 +14,34 @@ def compare_config(config1, config2):
             return False
     return True
 
-def compare_configs(folders):
+def compare_configs(folders, config, results_dir=RESULTS_DIR):
     """Return list of folders with the same config."""
     # Check if config.json is the same for all runs
-    with open(f'{RESULTS_DIR}/{folders[0]}/config.json', 'r') as f:
+    with open(f'{results_dir}/{folders[0]}/config.json', 'r') as f:
         config = json.load(f)
     for folder in folders:
-        with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+        with open(f'{results_dir}/{folder}/config.json', 'r') as f:
             if not compare_config(config, json.load(f)):
                 print(f'Config is different for folder {folder}, skipping')
                 folders.remove(folder)
     return folders
 
-def create_plot(experiment_name, figsize=(10,5), save_png=False):
+def create_plot(experiment_name, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR):
     """
     Creates a plot of the fitness vs generation for the given folder.
     One line for the average best fitness, one for the average mean fitness and a band for the standard deviation of both.
     Data is aggregated from all the experiment's runs in different folders. Thus the lines are averaged over all runs.
     """
     # Find folders
-    experiment_folders = [f for f in os.listdir(RESULTS_DIR) if '_'.join(f.split('_')[1:]) == experiment_name]
+    experiment_folders = [f for f in os.listdir(results_dir) if '_'.join(f.split('_')[1:]) == experiment_name]
     
     # Check if config.json is the same for all runs
-    experiment_folders = compare_configs(experiment_folders)
+    experiment_folders = compare_configs(experiment_folders, results_dir=results_dir)
 
     dfs = []
     for folder in experiment_folders:
         # Read data from csv file
-        dfs.append(pd.read_csv(f'{RESULTS_DIR}/{folder}/results.csv'))
+        dfs.append(pd.read_csv(f'{results_dir}/{folder}/results.csv'))
 
     # Get shortest df
     min_len = min([len(df) for df in dfs])
@@ -69,17 +69,17 @@ def create_plot(experiment_name, figsize=(10,5), save_png=False):
         plt.savefig(f'plots/{experiment_name}/plot.png')
     plt.show()
 
-def create_boxplot(experiment_name, metric="gain", figsize=(10,5), save_png=False):
+def create_boxplot(experiment_name, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR):
     """
     Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution in eval_best.json.
     Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
     Can use the gain, default fitness, balanced fitness or number of wins as the metric.
     """
     # Find folders
-    experiment_folders = [f for f in os.listdir(RESULTS_DIR) if '_'.join(f.split('_')[1:]) == experiment_name]
+    experiment_folders = [f for f in os.listdir(results_dir) if '_'.join(f.split('_')[1:]) == experiment_name]
     
     # Check if config.json is the same for all runs
-    experiment_folders = compare_configs(experiment_folders)
+    experiment_folders = compare_configs(experiment_folders, results_dir=results_dir)
 
     eval_config = None
 
@@ -89,7 +89,7 @@ def create_boxplot(experiment_name, metric="gain", figsize=(10,5), save_png=Fals
         df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
 
         # Read results from eval_best.json
-        with open(f'{RESULTS_DIR}/{folder}/eval_best.json', 'r') as f:
+        with open(f'{results_dir}/{folder}/eval_best.json', 'r') as f:
             saved = json.load(f)
             if not eval_config:
                 eval_config = {k: saved[k] for k in saved if k != "results"}
