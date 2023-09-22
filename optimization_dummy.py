@@ -16,17 +16,25 @@ from helpers import save_results, load_population, find_folder, RESULTS_DIR
 
 # imports other libs
 import numpy as np
+from numpy import sqrt, exp
 import os
 
-def simulation(env,x):
+def fitness_balanced(player_life, enemy_life, time):
+    """Returns a balanced fitness, based on the player life, enemy life and time"""
+    return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
+
+def simulation(env, x, fitness_method):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     f,p,e,t = env.play(pcont=x)
+    if fitness_method == 'balanced':
+        f = fitness_balanced(p, e, t)
+    # print(f'Fitness: {f}, player life: {p}, enemy life: {e}, time: {t}')
     return f
 
-def evaluate(env, x):
+def evaluate(env, x, fitness_method):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
-    return np.array(list(map(lambda y: simulation(env,y), x)))
+    return np.array([simulation(env, individual, fitness_method) for individual in x])
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -38,12 +46,6 @@ def normalize_pop_fitness(pfit):
     
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
-
-def normalize_pop_fitness(pfit):
-    # make rank array from fitness array pfit
-    rank = np.argsort(pfit)[::-1]
-    rank = np.exp(-rank)
-    return rank / rank.sum()
 
 def pick_parent(pop, pfit, method):
     """Return a parent from the population, based on a tournament, or multinomial sampling.
@@ -59,7 +61,6 @@ def pick_parent(pop, pfit, method):
             return pop[p1]
         else:
             return pop[p2]
-        
     elif method == 'multinomial':
         pfit = normalize_pop_fitness(pfit)
         pfit = pfit**2 # Square fitnesses to increase probability of picking best
@@ -67,7 +68,7 @@ def pick_parent(pop, pfit, method):
         return pop[np.random.choice(len(pop), p=pfit_distribution)]
     
 
-def mutate(child, mutation_rate, mutation_sigma):
+def mutate(child, mutation_rate):
     """Mutate child by adding random noise to selection of weights and biases.
     child is a numpy array of weights and biases.
     mutation_rate is the mutation rate."""
@@ -75,58 +76,25 @@ def mutate(child, mutation_rate, mutation_sigma):
     mask = np.random.rand(*child.shape) < mutation_rate
 
     # Add random noise to weights and biases where mask is True
-    child[mask] += np.random.normal(0, mutation_sigma, size=child.shape)[mask]
+    child[mask] += np.random.normal(0, 0.1, size=child.shape)[mask]
     
+    return child
+
+def mutate_stochastic_decaying(child, child_pfit, base_std=0.1):
+    """ Add random stochastic noise based on the fitness of the individual
+    pfit must be in the range [-50, 50] 
+    """
+    
+    std = base_std
+    learning_rate = 1 / (.1*sqrt((child_pfit+50)/4))
+    std = std * exp(learning_rate * np.random.normal(0, 1, size=1)[0] )
+    std = 5.0 if std > 5.0 else std
+
+    child += np.random.normal(0.0, std, size=child.shape)
     return child
     
 
-def save_results(experiment_name, gen, best, mean, std):
-    print(f'\n GENERATION {gen} best: {round(best,6)} mean: {round(mean,6)} std: {round(std,6)}')
-
-    # Save results using pandas
-    df = pd.DataFrame({'gen': [gen], 'best': [best], 'mean': [mean], 'std': [std]})
-    df.to_csv(experiment_name+'/results.csv', mode='a', header=False, index=False)
-
-
-def load_population(experiment_name,
-                    domain_lower,
-                    domain_upper,
-                    pop_size,
-                    n_vars,
-                    env):
-    """Load population from file if it exists. Otherwise initialize new population.
-    experiment_name is the name of the experiment."""
-    # If population file exists
-    if os.path.exists(experiment_name+'/population.npy'):
-        print('Loading population...')
-
-        # Load population
-        env.load_state()
-        pop = env.solutions[0]
-        pfit = env.solutions[1]
-
-        # Get last gen number from csv
-        df = pd.read_csv(experiment_name+'/results.csv')
-        gen = df['gen'].iloc[-1]
-    else:
-        print('Initializing new population...')
-
-        # Initialize population
-        pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
-        
-        # Eval
-        pfit = evaluate(env, pop)
-        gen = 0
-        env.update_solutions([pop, pfit])
-
-    best_idx = np.argmax(pfit)
-    mean = np.mean(pfit)
-    std = np.std(pfit)
-    
-    return pop, pfit, gen, best_idx, mean, std
-
-
-def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
+def select_survivors(pop, pfit, pop_size, best_idx, survivor_method):
     """Select survivors from population.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses.
@@ -146,7 +114,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method):
+def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, randomini):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -173,18 +141,46 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_me
             # Copy parent
             child = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
 
-        # Mutate
-        child = mutate(child, mutation_rate, mutation_sigma=mutation_sigma)
+            # Mutate
+            if mutation_type == 'normal':                child = mutate(child, mutation_rate)
+            elif mutation_type == 'stochastic_decaying': 
+                child = mutate_stochastic_decaying(child, np.mean(pfit))
+            
+            # Add to new population
+            pop_new[i] = child
         
-        # Add to new population
-        pop_new[i] = child
+    else:
+        # Pick 10 best parents
+        best_parents = np.argsort(pfit_norm)[::-1][:10]
+
+        # Copy and repeat parents
+        pop_new[:-add_amount] = np.repeat(pop[best_parents], int((len(pop)-add_amount)/10), axis=0)
+
+        # Mutate
+        if mutation_type   == 'normal':              child = mutate(child, mutation_rate)
+        elif mutation_type == 'stochastic_decaying': 
+            for i in range(len(pop)-add_amount):
+                child = mutate_stochastic_decaying(child, np.mean(pfit))
+                # Add to new population
+                pop_new[i] = child
 
     # Evaluate new population
-    pfit_new = evaluate(env, pop_new, fitness_method=fitness_method)
-    
-    # Combine old and new population
-    pop_combined = np.vstack((pop, pop_new))
-    pfit_combined = np.append(pfit, pfit_new)
+    if randomini == "no":
+        pfit_new = evaluate(env, pop_new, fitness_method=fitness_method)
+        
+        # Combine old and new population
+        pop_combined = np.vstack((pop, pop_new))
+        pfit_combined = np.append(pfit, pfit_new)
+    else:
+        # Combine old and new population
+        pop_combined = np.vstack((pop, pop_new))
+
+        # Run evaluation on new population n times and take avg
+        n_times = 10
+        pfit_combined = np.zeros((n_times, len(pop_combined)))
+        for i in range(n_times):
+            pfit_combined[i] = evaluate(env, pop_combined, fitness_method=fitness_method)
+        pfit_combined = np.mean(pfit_combined, axis=0)
 
     # Select survivors
     pop_new, pfit_new = select_survivors(pop_combined, pfit_combined, len(pop), np.argmax(pfit), survivor_method)
@@ -194,37 +190,54 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_me
 
 
 def main(
+        experiment_name = 'a1',
+        enemies = [2],
         n_hidden_neurons = 10,
-        domain_upper = 2,
-        domain_lower = -2,
-
-        # initialization of pupulation and population parameters
+        domain_upper = 1,
+        domain_lower = -1,
         pop_size = 100,
-        gens = 30,
+        gens = 100,
         mutation_rate = 0.2,
-
-        run = None
+        normalization_method = "domain_specific",
+        fitness_method = "balanced",
+        pick_parent_method = "multinomial",
+        survivor_method = "greedy",
+        randomini = "no",
+        headless = True,
+        # Alexanders Changes
+        mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
 ):
+    kwarg_dict = locals()
+
     # choose this for not using visuals and thus making experiments faster
-    headless = True
+    visuals = True
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
+        visuals = False
 
+    # Find folder
+    use_folder, start_gen = find_folder(experiment_name, gens, kwarg_dict)
 
-    experiment_name = 'optimization_test'
-    if not os.path.exists(experiment_name):
-        os.makedirs(experiment_name)
+    if not use_folder:
+        milliseconds = int(round(time.time() * 1000))
+        use_folder = f'{milliseconds}_{experiment_name}'
+        os.makedirs(f'{RESULTS_DIR}/{use_folder}')
+
+    multi = "no"
+    if len(enemies) > 1:
+        multi = "yes"
 
     # initializes simulation in individual evolution mode, for single static enemy.
-    env = Environment(experiment_name=experiment_name,
-                    enemies=[2],
+    env = Environment(experiment_name=f'{RESULTS_DIR}/{use_folder}',
+                    multiplemode=multi,
+                    enemies=enemies,
                     playermode="ai",
                     player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="fastest",
-                    visuals=False)
-
+                    visuals=visuals,
+                    randomini=randomini)
 
     # number of weights for multilayer with 10 hidden neurons
     if n_hidden_neurons > 0:
@@ -233,25 +246,15 @@ def main(
         n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
-    pop, pfit, start_gen, best_idx, mean, std = load_population(experiment_name, domain_lower, domain_upper, pop_size, n_vars, env)
-    print(f'>>Win Ratio: {np.where(pfit>100,1,0).mean()*100:.2f} %')
-
-    # Dict with Statistics about pfit: max, mean, std
-    stats = {'generation':[0.0], 'max': [pfit.max()], 'mean': [pfit.mean()], 'q5': [np.quantile(pfit, .05)], 'q95': [np.quantile(pfit, .95)], 'min': [pfit.min()]}
-    
-    raw_pfit = {'generation':[], 'pfit':[], 'run':[]}
-    for _pfit in pfit:
-        raw_pfit['generation'].append(0)
-        raw_pfit['pfit'].append(_pfit)
-        raw_pfit['run'].append(run)
+    pop, pfit, best_idx, mean, std = load_population(domain_lower, domain_upper, pop_size, 
+                                                     n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0)
 
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
-        mutation_sigma = np.random.normal(1, 1, 1)[0]
-
-        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_sigma=mutation_sigma)
-        print(f'>>Win Ratio: {np.where(pfit>100,1,0).mean()*100:.2f} %')
+        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_type=mutation_type,
+                                   fitness_method=fitness_method, pick_parent_method=pick_parent_method, 
+                                   survivor_method=survivor_method, randomini=randomini)
         
         # Get stats
         best_idx = np.argmax(pfit)
@@ -259,18 +262,6 @@ def main(
         mean = np.mean(pfit)
         std = np.std(pfit)
         
-        # Save stats
-        stats['generation'].append(gen+1)
-        stats['max'].append(best)
-        stats['mean'].append(mean)
-        stats['q5'].append(np.quantile(pfit, .05))
-        stats['q95'].append(np.quantile(pfit, .95))
-        stats['min'].append(pfit.min())
-        for _pfit in pfit:
-            raw_pfit['generation'].append(gen+1)
-            raw_pfit['pfit'].append(_pfit)
-            raw_pfit['run'].append(run)
-
         # Save results
         save_results(use_folder, gen, best, mean, std, kwarg_dict)
     
@@ -281,32 +272,72 @@ def main(
         env.update_solutions([pop, pfit])
         env.save_state()
 
-    # env.state_to_log() # checks environment state
+    env.state_to_log() # checks environment state
 
-    # make pandas dataframe from stats
-    df = pd.DataFrame(stats)
-    # save df to file as csv named with experiment name and time. example "experiment1: 2019-05-16 16:57:57.757925.csv"
-    df.to_csv(experiment_name+'/'+experiment_name+'_'+str(time.strftime("%Y-%m-%d %H:%M:%S"))+'.csv', index=False)
-    print(f'raw_pfit: {raw_pfit}')
-    return raw_pfit
+
+def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, fitness_method, randomini):
+    # Check overview.csv for best solution
+    if not os.path.exists(f'{RESULTS_DIR}/overview.csv'):
+        print('overview.csv does not exist. Exiting...')
+        return
+    df = pd.read_csv(f'{RESULTS_DIR}/overview.csv')
+    if experiment_name not in df['experiment_name'].values:
+        print(f'Experiment {experiment_name} not in overview.csv. Exiting...')
+        return
+    folder = df[df['experiment_name'] == experiment_name]['folder'].values[0]
+
+    best_solution = np.loadtxt(f'{RESULTS_DIR}/{folder}/best.txt')
+
+    print(f'\nRunning best solution for enemy {enemies}')
+
+    multi = "no"
+    speed = "normal"
+    if len(enemies) > 1:
+        multi = "yes"
+        # speed = "fastest"
+
+    env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
+                    multiplemode=multi,
+                    enemies=enemies,
+                    playermode="ai",
+                    player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
+                    enemymode="static",
+                    level=2,
+                    speed=speed,
+                    visuals=True,
+                    randomini=randomini)
+    
+    f,p,e,t = env.play(pcont=best_solution)
+    win_condition = e <= 0
+    win_str = 'WON' if win_condition else 'LOST'
+    print(win_str)
+    print(f'Fitness: {f}, player life: {p}, enemy life: {e}, time: {t}')
+    if fitness_method == 'balanced':
+        print(f'custom fitness: {fitness_balanced(p, e, t)}')
+
 
 if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
     # These are used for both the evolution and the test
-    enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
+    enemies = [1] # [1, 2, 3, 4, 5, 6, 7, 8]
     n_hidden_neurons = 10
     normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
     fitness_method = "balanced" # "balanced", "default"
     randomini = "yes" # "yes", "no"
     experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
-
+    
     RUN_EVOLUTION = True
 
     # Track time
-    start_time = time.time()
-    main()
-
-    # Print time in minutes and seconds
-    print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
-    print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
-
+    if RUN_EVOLUTION:
+        start_time = time.time()
+        main(
+            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, 
+            normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini,
+            gens=500, headless=True,
+        )
+        # Print time in minutes and seconds
+        print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
+        print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
+    else:
+        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini)
