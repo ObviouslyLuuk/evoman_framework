@@ -17,7 +17,6 @@ def save_results(use_folder, gen, best, mean, std, kwarg_dict={}):
     else:
         df = pd.DataFrame(columns=['gen', 'best', 'mean', 'std'])
 
-    # Add new row
     df = df.append({'gen': gen, 'best': best, 'mean': mean, 'std': std}, ignore_index=True)
     df['gen'] = df['gen'].astype(int)
 
