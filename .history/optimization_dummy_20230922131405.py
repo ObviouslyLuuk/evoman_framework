@@ -39,11 +39,11 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
-def normalize_pop_fitness(pfit):
-    # make rank array from fitness array pfit
-    rank = np.argsort(pfit)[::-1]
-    rank = np.exp(-rank)
-    return rank / rank.sum()
+# def normalize_pop_fitness(pfit):
+#     # make rank array from fitness array pfit
+#     rank = np.argsort(pfit)[::-1]
+#     rank = np.exp(-rank)
+#     return rank / rank.sum()
 
 def pick_parent(pop, pfit, method):
     """Return a parent from the population, based on a tournament, or multinomial sampling.
@@ -59,7 +59,6 @@ def pick_parent(pop, pfit, method):
             return pop[p1]
         else:
             return pop[p2]
-        
     elif method == 'multinomial':
         pfit = normalize_pop_fitness(pfit)
         pfit = pfit**2 # Square fitnesses to increase probability of picking best
@@ -146,7 +145,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method):
+def evolution_step(env, pop, pfit, mutation_rate):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -174,7 +173,7 @@ def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_me
             child = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
 
         # Mutate
-        child = mutate(child, mutation_rate, mutation_sigma=mutation_sigma)
+        child = mutate(child, mutation_rate)
         
         # Add to new population
         pop_new[i] = child
@@ -202,8 +201,6 @@ def main(
         pop_size = 100,
         gens = 30,
         mutation_rate = 0.2,
-
-        run = None
 ):
     # choose this for not using visuals and thus making experiments faster
     headless = True
@@ -234,24 +231,11 @@ def main(
 
     # Load population
     pop, pfit, start_gen, best_idx, mean, std = load_population(experiment_name, domain_lower, domain_upper, pop_size, n_vars, env)
-    print(f'>>Win Ratio: {np.where(pfit>100,1,0).mean()*100:.2f} %')
-
-    # Dict with Statistics about pfit: max, mean, std
-    stats = {'generation':[0.0], 'max': [pfit.max()], 'mean': [pfit.mean()], 'q5': [np.quantile(pfit, .05)], 'q95': [np.quantile(pfit, .95)], 'min': [pfit.min()]}
-    
-    raw_pfit = {'generation':[], 'pfit':[], 'run':[]}
-    for _pfit in pfit:
-        raw_pfit['generation'].append(0)
-        raw_pfit['pfit'].append(_pfit)
-        raw_pfit['run'].append(run)
 
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
-        mutation_sigma = np.random.normal(1, 1, 1)[0]
-
-        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_sigma=mutation_sigma)
-        print(f'>>Win Ratio: {np.where(pfit>100,1,0).mean()*100:.2f} %')
+        pop, pfit = evolution_step(env, pop, pfit, mutation_rate)
         
         # Get stats
         best_idx = np.argmax(pfit)
@@ -283,12 +267,6 @@ def main(
 
     # env.state_to_log() # checks environment state
 
-    # make pandas dataframe from stats
-    df = pd.DataFrame(stats)
-    # save df to file as csv named with experiment name and time. example "experiment1: 2019-05-16 16:57:57.757925.csv"
-    df.to_csv(experiment_name+'/'+experiment_name+'_'+str(time.strftime("%Y-%m-%d %H:%M:%S"))+'.csv', index=False)
-    print(f'raw_pfit: {raw_pfit}')
-    return raw_pfit
 
 if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
@@ -309,4 +287,3 @@ if __name__ == '__main__':
     # Print time in minutes and seconds
     print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
     print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
-

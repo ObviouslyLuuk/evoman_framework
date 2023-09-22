@@ -39,11 +39,11 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
-def normalize_pop_fitness(pfit):
-    # make rank array from fitness array pfit
-    rank = np.argsort(pfit)[::-1]
-    rank = np.exp(-rank)
-    return rank / rank.sum()
+# def normalize_pop_fitness(pfit):
+#     # make rank array from fitness array pfit
+#     rank = np.argsort(pfit)[::-1]
+#     rank = np.exp(-rank)
+#     return rank / rank.sum()
 
 def pick_parent(pop, pfit, method):
     """Return a parent from the population, based on a tournament, or multinomial sampling.
@@ -59,7 +59,6 @@ def pick_parent(pop, pfit, method):
             return pop[p1]
         else:
             return pop[p2]
-        
     elif method == 'multinomial':
         pfit = normalize_pop_fitness(pfit)
         pfit = pfit**2 # Square fitnesses to increase probability of picking best
@@ -283,12 +282,6 @@ def main(
 
     # env.state_to_log() # checks environment state
 
-    # make pandas dataframe from stats
-    df = pd.DataFrame(stats)
-    # save df to file as csv named with experiment name and time. example "experiment1: 2019-05-16 16:57:57.757925.csv"
-    df.to_csv(experiment_name+'/'+experiment_name+'_'+str(time.strftime("%Y-%m-%d %H:%M:%S"))+'.csv', index=False)
-    print(f'raw_pfit: {raw_pfit}')
-    return raw_pfit
 
 if __name__ == '__main__':
     # Set experiment name, enemies and number of hidden neurons
@@ -309,4 +302,3 @@ if __name__ == '__main__':
     # Print time in minutes and seconds
     print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
     print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
-

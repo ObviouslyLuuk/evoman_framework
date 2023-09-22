@@ -39,11 +39,11 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
-def normalize_pop_fitness(pfit):
-    # make rank array from fitness array pfit
-    rank = np.argsort(pfit)[::-1]
-    rank = np.exp(-rank)
-    return rank / rank.sum()
+# def normalize_pop_fitness(pfit):
+#     # make rank array from fitness array pfit
+#     rank = np.argsort(pfit)[::-1]
+#     rank = np.exp(-rank)
+#     return rank / rank.sum()
 
 def pick_parent(pop, pfit, method):
     """Return a parent from the population, based on a tournament, or multinomial sampling.
@@ -59,7 +59,6 @@ def pick_parent(pop, pfit, method):
             return pop[p1]
         else:
             return pop[p2]
-        
     elif method == 'multinomial':
         pfit = normalize_pop_fitness(pfit)
         pfit = pfit**2 # Square fitnesses to increase probability of picking best
