@@ -11,22 +11,22 @@ import pandas as pd
 import time
 
 from evoman.environment import Environment
-from demo_controller import player_controller
+from custom_controller import player_controller
+from helpers import save_results, load_population, find_folder, RESULTS_DIR
 
 # imports other libs
 import numpy as np
 import os
 
-def simulation(env,pop):
+def simulation(env,x):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
-    f,p,e,t = env.play(pcont=pop)
+    f,p,e,t = env.play(pcont=x)
     return f
 
-def evaluate(env, pop):
+def evaluate(env, x):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
-
-    return np.array(list(map(lambda pop: simulation(env,pop), pop)))
+    return np.array(list(map(lambda y: simulation(env,y), x)))
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -45,19 +45,25 @@ def normalize_pop_fitness(pfit):
 #     rank = np.exp(-rank)
 #     return rank / rank.sum()
 
-def pick_parent(pop, pfit):
-    """Return a parent from the population, based on a tournament.
+def pick_parent(pop, pfit, method):
+    """Return a parent from the population, based on a tournament, or multinomial sampling.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
-    # Pick 2 random parents
-    p1 = np.random.randint(0, len(pop))
-    p2 = np.random.randint(0, len(pop))
-    
-    # Return the best of the two
-    if pfit[p1] > pfit[p2]:
-        return pop[p1]
-    else:
-        return pop[p2]
+    if method == 'tournament':
+        # Pick 2 random parents
+        p1 = np.random.randint(0, len(pop))
+        p2 = np.random.randint(0, len(pop))
+        
+        # Return the best of the two
+        if pfit[p1] > pfit[p2]:
+            return pop[p1]
+        else:
+            return pop[p2]
+    elif method == 'multinomial':
+        pfit = normalize_pop_fitness(pfit)
+        pfit = pfit**2 # Square fitnesses to increase probability of picking best
+        pfit_distribution = pfit / np.sum(pfit)
+        return pop[np.random.choice(len(pop), p=pfit_distribution)]
     
 
 def mutate(child, mutation_rate, mutation_sigma):
@@ -106,7 +112,7 @@ def load_population(experiment_name,
 
         # Initialize population
         pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
-
+        
         # Eval
         pfit = evaluate(env, pop)
         gen = 0
@@ -124,11 +130,11 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses.
     pop_size is the size of the population."""
-    if not probabilitic:
+    if survivor_method == 'greedy':
         idx = np.argsort(pfit)[::-1][:pop_size]
         pop = pop[idx]
         pfit = pfit[idx]
-    else:
+    elif survivor_method == 'multinomial':
         pfit_norm = normalize_pop_fitness(pfit)
         probs = pfit_norm / np.sum(pfit_norm)
         idx = np.random.choice(len(pop), size=pop_size, p=probs, replace=False)
@@ -139,7 +145,7 @@ def select_survivors(pop, pfit, pop_size, best_idx, probabilitic=False):
     return pop, pfit
 
 
-def evolution_step(env, pop, pfit, mutation_rate, mutation_sigma):
+def evolution_step(env, pop, pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -147,14 +153,24 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_sigma):
     mutation_rate is the mutation rate."""
     # Normalize fitnesses
     pfit_norm = normalize_pop_fitness(pfit)
+
+    # Print amount of duplicates
+    duplicates = len(pfit) - len(np.unique(pfit))
+    print(f'Amount of duplicate fitnesses: {duplicates}')
+    # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
     
     # Create new population
     pop_new = np.zeros_like(pop)
     
-    # For each individual in the population
-    for i in range(len(pop)):
-        # Copy parent
-        child = pick_parent(pop, pfit_norm).copy()
+    # Add random individuals
+    add_amount = int(len(pop) / 10)
+    pop_new[-add_amount:] = np.random.uniform(-1, 1, size=(add_amount, pop.shape[1]))
+    
+    if pick_parent_method != 'greedy':
+        # For each individual in the population
+        for i in range(len(pop)-add_amount):
+            # Copy parent
+            child = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
 
         # Mutate
         child = mutate(child, mutation_rate, mutation_sigma=mutation_sigma)
@@ -163,21 +179,20 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_sigma):
         pop_new[i] = child
 
     # Evaluate new population
-    pfit_new = evaluate(env, pop_new)
+    pfit_new = evaluate(env, pop_new, fitness_method=fitness_method)
     
     # Combine old and new population
     pop_combined = np.vstack((pop, pop_new))
     pfit_combined = np.append(pfit, pfit_new)
 
     # Select survivors
-    pop_new, pfit_new = select_survivors(pop_combined, pfit_combined, len(pop), np.argmax(pfit))
+    pop_new, pfit_new = select_survivors(pop_combined, pfit_combined, len(pop), np.argmax(pfit), survivor_method)
     
     # Return new population and fitnesses
     return pop_new, pfit_new
 
 
 def main(
-        # initializatio of Neural Network
         n_hidden_neurons = 10,
         domain_upper = 2,
         domain_lower = -2,
@@ -190,30 +205,31 @@ def main(
         run = None
 ):
     # choose this for not using visuals and thus making experiments faster
-    headless = 0
+    headless = True
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
-    experiment_name = 'A3'
+    experiment_name = 'optimization_test'
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
     # initializes simulation in individual evolution mode, for single static enemy.
-    enemies = [6,7,8]
     env = Environment(experiment_name=experiment_name,
-                    enemies=enemies,
-                    multiplemode='yes' if len(enemies)>1 else 'no',
+                    enemies=[2],
                     playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
+                    player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="fastest",
-                    visuals=0)
+                    visuals=False)
 
 
     # number of weights for multilayer with 10 hidden neurons
-    n_vars = (env.get_num_sensors()+1)*n_hidden_neurons + (n_hidden_neurons+1)*5
+    if n_hidden_neurons > 0:
+        n_vars = (env.get_num_sensors()+1)*n_hidden_neurons + (n_hidden_neurons+1)*5
+    else:
+        n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
     pop, pfit, start_gen, best_idx, mean, std = load_population(experiment_name, domain_lower, domain_upper, pop_size, n_vars, env)
@@ -255,10 +271,10 @@ def main(
             raw_pfit['run'].append(run)
 
         # Save results
-        save_results(experiment_name, gen, best, mean, std)
+        save_results(use_folder, gen, best, mean, std, kwarg_dict)
     
         # Save best individual
-        np.savetxt(experiment_name+'/best.txt', pop[best_idx])
+        np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
         
         # Save environment
         env.update_solutions([pop, pfit])
@@ -274,6 +290,17 @@ def main(
     return raw_pfit
 
 if __name__ == '__main__':
+    # Set experiment name, enemies and number of hidden neurons
+    # These are used for both the evolution and the test
+    enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
+    n_hidden_neurons = 10
+    normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
+    fitness_method = "balanced" # "balanced", "default"
+    randomini = "yes" # "yes", "no"
+    experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
+
+    RUN_EVOLUTION = True
+
     # Track time
     start_time = time.time()
     main()
