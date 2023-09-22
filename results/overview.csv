@@ -1,10 +1,10 @@
-experiment_name,best_score,folder
-[1]_10_inp-norm-domain_specific_f-balanced,94.93740496697303,1694390326498_[1]_10_inp-norm-domain_specific_f-balanced
-[2]_10_inp-norm-domain_specific_f-balanced,91.00278772623587,1694390372419_[2]_10_inp-norm-domain_specific_f-balanced
-[3]_10_inp-norm-domain_specific_f-balanced,84.02111423509888,1694384128845_[3]_10_inp-norm-domain_specific_f-balanced
-[4]_10_inp-norm-domain_specific_f-balanced,77.63695183661197,1694391128312_[4]_10_inp-norm-domain_specific_f-balanced
-[5]_10_inp-norm-domain_specific_f-balanced,94.61240366476757,1694392372571_[5]_10_inp-norm-domain_specific_f-balanced
-[6]_10_inp-norm-domain_specific_f-balanced,64.53193985886502,1694390048041_[6]_10_inp-norm-domain_specific_f-balanced
-[7]_10_inp-norm-domain_specific_f-balanced,92.47168626269772,1694389525360_[7]_10_inp-norm-domain_specific_f-balanced
-[8]_10_inp-norm-domain_specific_f-balanced,89.88188000615581,1694389578795_[8]_10_inp-norm-domain_specific_f-balanced
-"[7, 8]_10_inp-norm-domain_specific_f-balanced",90.79605369405458,"1694389642659_[7, 8]_10_inp-norm-domain_specific_f-balanced"
+best_fitness,best_folder,experiment_name
+94.93740496697303,1694390326498_[1]_10_inp-norm-domain_specific_f-balanced,[1]_10_inp-norm-domain_specific_f-balanced
+91.00278772623588,1694390372419_[2]_10_inp-norm-domain_specific_f-balanced,[2]_10_inp-norm-domain_specific_f-balanced
+84.02111423509888,1694384128845_[3]_10_inp-norm-domain_specific_f-balanced,[3]_10_inp-norm-domain_specific_f-balanced
+77.63695183661197,1694391128312_[4]_10_inp-norm-domain_specific_f-balanced,[4]_10_inp-norm-domain_specific_f-balanced
+94.61240366476761,1694392372571_[5]_10_inp-norm-domain_specific_f-balanced,[5]_10_inp-norm-domain_specific_f-balanced
+64.53193985886502,1694390048041_[6]_10_inp-norm-domain_specific_f-balanced,[6]_10_inp-norm-domain_specific_f-balanced
+90.79605369405458,"1694389642659_[7, 8]_10_inp-norm-domain_specific_f-balanced","[7, 8]_10_inp-norm-domain_specific_f-balanced"
+92.47168626269773,1694388846725_[7]_10_inp-norm-domain_specific_f-balanced,[7]_10_inp-norm-domain_specific_f-balanced
+89.88188000615582,1694389578795_[8]_10_inp-norm-domain_specific_f-balanced,[8]_10_inp-norm-domain_specific_f-balanced
