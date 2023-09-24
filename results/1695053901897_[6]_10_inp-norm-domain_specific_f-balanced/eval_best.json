@@ -1,0 +1,16 @@
+{
+    "gen": 14,
+    "enemies": [
+        6
+    ],
+    "results": [
+        {
+            "gain": -10.0,
+            "fitness": 74.50021295934414,
+            "fitness_balanced": 38.49871032945961,
+            "wins": [
+                false
+            ]
+        }
+    ]
+}

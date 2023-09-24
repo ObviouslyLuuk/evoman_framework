@@ -10,9 +10,9 @@ from optimization_dummy import fitness_balanced
 from helpers import RESULTS_DIR
 
 
-def run_test(folder, enemies=None, randomini="no"):
-    best_solution = np.loadtxt(f'{RESULTS_DIR}/{folder}/best.txt')
-    with open(f"{RESULTS_DIR}/{folder}/config.json", "r") as f:
+def run_test(folder, enemies=None, randomini_test="no", results_dir=RESULTS_DIR):
+    best_solution = np.loadtxt(f'{results_dir}/{folder}/best.txt')
+    with open(f"{results_dir}/{folder}/config.json", "r") as f:
         config = json.load(f)
     if not enemies:
         enemies             = config["enemies"]
@@ -23,7 +23,7 @@ def run_test(folder, enemies=None, randomini="no"):
     fs = []
     wins = []
     for enemy in enemies:
-        env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
+        env = Environment(experiment_name=f'{results_dir}/{folder}',
                         multiplemode="no",
                         enemies=[enemy],
                         playermode="ai",
@@ -32,7 +32,7 @@ def run_test(folder, enemies=None, randomini="no"):
                         level=2,
                         speed="fastest",
                         visuals=False,
-                        randomini=randomini)
+                        randomini=randomini_test)
 
         f,p,e,t = env.play(pcont=best_solution)
         gain += p-e
@@ -51,20 +51,18 @@ def run_test(folder, enemies=None, randomini="no"):
     }
 
 
-# Takes about 30 seconds to run
+# Takes about 30 seconds per 100 experiment runs to run this
 if __name__ == "__main__":
-    # Get all results folders
-    results_folders = [f for f in os.listdir(RESULTS_DIR) if os.path.isdir(f"{RESULTS_DIR}/{f}")]
+    folders = [f for f in os.listdir(RESULTS_DIR) if os.path.isdir(f"{RESULTS_DIR}/{f}")]
 
     test_n = 5
-    randomini = "no"
     enemies = None
     test_all_enemies = False
 
     if test_all_enemies:
         enemies = [1,2,3,4,5,6,7,8]
 
-    for folder in tqdm(results_folders):
+    for folder in tqdm(folders):
         # Get gen from config.json
         with open(f"{RESULTS_DIR}/{folder}/config.json", "r") as f:
             config = json.load(f)
@@ -72,17 +70,24 @@ if __name__ == "__main__":
         if enemies != [1,2,3,4,5,6,7,8]:
             enemies = config["enemies"]
 
-        # Skip run if already eval_best.json for the config and latest generation
-        if os.path.exists(f"{RESULTS_DIR}/{folder}/eval_best.json"):
-            with open(f"{RESULTS_DIR}/{folder}/eval_best.json", "r") as f:
-                saved = json.load(f)
-            if gen == saved["gen"] and saved["randomini"] == randomini and saved["enemies"] == enemies:
-                print(f"Skipping {folder} because already evaluated gen {gen} with randomini {randomini} and enemies {enemies}")
-                continue
+        for randomini_test in ["yes", "no"]:
+            add_str = ""
+            use_n = 1
+            if randomini_test == "yes":
+                add_str = "_randomini"
+                use_n = test_n
 
-        test_results = {"gen": gen, "randomini": randomini, "enemies": enemies, "results": []}
-        for i in range(test_n):
-            test_results["results"].append(run_test(folder, enemies=enemies, randomini=randomini))
-    
-        with open(f"{RESULTS_DIR}/{folder}/eval_best.json", "w") as f:
-            json.dump(test_results, f, indent=4)
+            # Skip run if already eval_best.json for the config and latest generation
+            if os.path.exists(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json"):
+                with open(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json", "r") as f:
+                    saved = json.load(f)
+                if gen == saved["gen"] and saved["enemies"] == enemies:
+                    print(f"Skipping {folder} because already evaluated gen {gen} with enemies {enemies}")
+                    continue
+
+            test_results = {"gen": gen, "enemies": enemies, "results": []}
+            for i in range(use_n):
+                test_results["results"].append(run_test(folder, enemies=enemies, randomini_test=randomini_test, results_dir=RESULTS_DIR))
+        
+            with open(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json", "w") as f:
+                json.dump(test_results, f, indent=4)

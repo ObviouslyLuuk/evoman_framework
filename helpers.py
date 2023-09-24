@@ -32,59 +32,56 @@ def save_results(use_folder, gen, best, mean, std, kwarg_dict={}):
     with open(f'{RESULTS_DIR}/{use_folder}/config.json', 'w') as f:
         json.dump(kwarg_dict, f, indent=4)
 
-    # Update overview.csv with best score
-    if not os.path.exists(f'{RESULTS_DIR}/overview.csv'):
-        overview_df = pd.DataFrame(columns=['experiment_name', 'best_score', 'folder'])
-        overview_df.to_csv(f'{RESULTS_DIR}/overview.csv', index=False)
-    df = pd.read_csv(f'{RESULTS_DIR}/overview.csv')
-    if experiment_name in df['experiment_name'].values:
-        # Overwrite best score if current score is better
-        if best > df[df['experiment_name'] == experiment_name]['best_score'].values[0]:
-            df.loc[df['experiment_name'] == experiment_name, 'best_score'] = best
-            df.loc[df['experiment_name'] == experiment_name, 'folder'] = use_folder
-    else:
-        # Add new row
-        df = df.append({'experiment_name': experiment_name, 'best_score': best, 'folder': use_folder}, ignore_index=True)
-    df.to_csv(f'{RESULTS_DIR}/overview.csv', index=False)
 
-
-def find_folder(experiment_name, gens, kwarg_dict):
-    """Find folder with experiment_name in it."""
+def find_folder(config):
+    """Find folder to continue with that agrees with config."""
     use_folder = None
     gen = 0
     existing_folders = os.listdir(RESULTS_DIR)
-    # Check if any of the existing folder names are in the experiment name
-    existing_folders = [folder for folder in existing_folders if '_'.join(folder.split('_')[1:]) == experiment_name] # remove timestamp from folder name
+    existing_folders = compare_configs(existing_folders, config=config, results_dir=RESULTS_DIR)
 
     if len(existing_folders) > 0:
         # Sort by timestamp
         existing_folders = sorted(existing_folders, key=lambda x: x.split('_')[0], reverse=True)
         for folder in existing_folders:
-            # Check if config.json exists
-            if not os.path.exists(f'{RESULTS_DIR}/{folder}/config.json'):
-                if not os.path.exists(f'{RESULTS_DIR}/{folder}/results.csv'):
-                    print(f'No results.csv in {folder}. Deleting folder...')
-                    # Delete folder and contents
-                    os.system(f'rm -rf {RESULTS_DIR}/{folder}')
-                    continue
-                print(f'No config.json in {folder}. Skipping...')
-                continue
-            # Load config.json
-            with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
-                config = json.load(f)
-            # Check if config matches kwarg_dict
-            if not all([config[key] == kwarg_dict[key] for key in kwarg_dict if key != 'gens']): # we might want to continue evolution with more gens
-                print(f'Config in {folder} does not match kwarg_dict. Skipping...')
-                continue
             # Check if gen already reached gens
-            if config['gen'] >= gens-1:
+            with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+                saved_config = json.load(f)
+            if saved_config['gen'] >= config['gens']-1:
                 print(f'Gen in {folder} already reached gens. Skipping...')
                 continue
             use_folder = folder
-            gen = config['gen']+1
+            gen = saved_config['gen']+1
             break
 
     return use_folder, gen
+
+
+
+def find_folders(config):
+    """Return list of folders that agrees with the given config."""
+    folders = [f for f in os.listdir(RESULTS_DIR) if os.path.isdir(f"{RESULTS_DIR}/{f}")]
+
+    # Get folders that agree with config
+    folders = compare_configs(folders, config=config, results_dir=RESULTS_DIR)
+
+    if len(folders) == 0:
+        print('No folders found with given config')
+    return folders
+
+def get_best(config):
+    """
+    Returns the folder with the best fitness for the given config
+    """
+    folders = compare_configs(find_folders(config))
+    fitness_by_folder = {}
+    for folder in folders:
+        with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+            config = json.load(f)
+        best_fitness = config['best']
+        fitness_by_folder[folder] = best_fitness
+    best_folder = max(fitness_by_folder, key=fitness_by_folder.get)
+    return best_folder
 
 
 def load_population(domain_lower,
@@ -116,3 +113,41 @@ def load_population(domain_lower,
     mean = np.mean(pfit)
     std = np.std(pfit)
     return pop, pfit, best_idx, mean, std
+
+
+
+def compare_config(config1, config2):
+    """Return True if the two configs are the same, False otherwise. Ignores gen, best, mean and std. 
+    Only keys in the first config are checked."""
+    ignore = ['gens', 'gen', 'best', 'mean', 'std', 'headless']
+    for key in config1:
+        if key in ignore:
+            continue
+        if config1[key] != config2[key]:
+            return False
+    return True
+
+def compare_configs(folders, config=None, results_dir=RESULTS_DIR, printing=False):
+    """Return list of folders with the same config. Only keys in the first config are checked."""
+    # First remove folders that don't have a config.json
+    for folder in folders:
+        # Check if config.json exists
+        if not os.path.exists(f'{results_dir}/{folder}/config.json'):
+            # Delete folder and contents
+            os.system(f'rm -rf {results_dir}/{folder}')
+
+    # Check if config.json is the same for all runs
+    if not config:
+        with open(f'{results_dir}/{folders[0]}/config.json', 'r') as f:
+            config = json.load(f)
+    selected_folders = []
+    for folder in folders:
+        with open(f'{results_dir}/{folder}/config.json', 'r') as f:
+            folder_config = json.load(f)
+        if not compare_config(config, folder_config):
+            if printing:
+                print(f'Config is different for folder {folder}, skipping')
+            continue
+        selected_folders.append(folder)
+    return selected_folders
+

@@ -21,6 +21,8 @@ Questions:
 Notes:
 - could be useful tracking the duplicate fitness scores to see how diverse the population is
 - look into randomini in the environment, for evolving?
+    - this is interesting. Evolving with randomini does way worse. Maybe because the fittest individuals might be complete shit in the next gen, so there's too much
+    randomness? Could try only starting randomini after reaching a certain fitness. Could also try multiple randomini evals per generation to deemphasize chance
 - for task II be mindful of whether they use their player_controller for the competition or not (this would affect whether we train with theirs or our own)
 inputs are limited in the following ways:
 - no info about where the player is on the map

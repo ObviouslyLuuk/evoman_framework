@@ -9,10 +9,11 @@
 import sys
 import pandas as pd
 import time
+import json
 
 from evoman.environment import Environment
 from custom_controller import player_controller
-from helpers import save_results, load_population, find_folder, RESULTS_DIR
+from helpers import save_results, load_population, find_folder, find_folders, RESULTS_DIR, get_best
 
 # imports other libs
 import numpy as np
@@ -178,7 +179,7 @@ def main(
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
     # Find folder
-    use_folder, start_gen = find_folder(experiment_name, gens, kwarg_dict)
+    use_folder, start_gen = find_folder(kwarg_dict)
 
     if not use_folder:
         milliseconds = int(round(time.time() * 1000))
@@ -234,20 +235,22 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, fitness_method, randomini):
-    # Check overview.csv for best solution
-    if not os.path.exists(f'{RESULTS_DIR}/overview.csv'):
-        print('overview.csv does not exist. Exiting...')
-        return
-    df = pd.read_csv(f'{RESULTS_DIR}/overview.csv')
-    if experiment_name not in df['experiment_name'].values:
-        print(f'Experiment {experiment_name} not in overview.csv. Exiting...')
-        return
-    folder = df[df['experiment_name'] == experiment_name]['folder'].values[0]
+def run_test(config, randomini_test="no"):
+    """Run the best solution for the given config"""
+    enemies = config['enemies']
+    n_hidden_neurons = config['n_hidden_neurons']
+    normalization_method = config['normalization_method']
+    fitness_method = config['fitness_method']
+
+    folder = get_best(config)
+    with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+        config = json.load(f)
 
     best_solution = np.loadtxt(f'{RESULTS_DIR}/{folder}/best.txt')
 
     print(f'\nRunning best solution for enemy {enemies}')
+    print(f'Best folder: {folder}')
+    print(f'Best fitness: {config["best"]}')
 
     multi = "no"
     speed = "normal"
@@ -264,7 +267,7 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, f
                     level=2,
                     speed=speed,
                     visuals=True,
-                    randomini=randomini)
+                    randomini=randomini_test)
     
     f,p,e,t = env.play(pcont=best_solution)
     win_condition = e <= 0
@@ -276,26 +279,30 @@ def run_test(experiment_name, enemies, n_hidden_neurons, normalization_method, f
 
 
 if __name__ == '__main__':
-    # Set experiment name, enemies and number of hidden neurons
-    # These are used for both the evolution and the test
-    enemies = [3] # [1, 2, 3, 4, 5, 6, 7, 8]
-    n_hidden_neurons = 10
-    normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
-    fitness_method = "balanced" # "balanced", "default"
-    randomini = "yes" # "yes", "no"
-    experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
+    config = {
+        # "experiment_name":      'optimization_test',
+        "enemies":              [2],                # [1, 2, 3, 4, 5, 6, 7, 8]
+        "randomini":            "no",               # "yes", "no"
+        "normalization_method": "domain_specific",  # "default", "domain_specific", "around_0"
+        "fitness_method":       "balanced",         # "default", "balanced"
+        "pick_parent_method":   "multinomial",
+        "survivor_method":      "greedy",
+        "gens":                 30,
+        "n_hidden_neurons":     10,
+        "pop_size":             100,
+    }
+
+    config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
 
     RUN_EVOLUTION = True
+    RANDOMINI_TEST = "no"
 
     # Track time
     if RUN_EVOLUTION:
         start_time = time.time()
-        main(
-            experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini,
-            gens=30,
-        )
+        main(**config)
         # Print time in minutes and seconds
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
         print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
     else:
-        run_test(experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini)
+        run_test(config, randomini_test=RANDOMINI_TEST)
