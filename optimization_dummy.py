@@ -17,6 +17,7 @@ from helpers import save_results, load_population, find_folder, RESULTS_DIR
 # imports other libs
 import numpy as np
 from numpy import sqrt, exp
+from scipy.stats import rankdata
 import os
 
 def fitness_balanced(player_life, enemy_life, time):
@@ -35,6 +36,15 @@ def evaluate(env, x, fitness_method):
     """Returns fitnesses for population x in an array.
     x is a numpy array of individuals"""
     return np.array([simulation(env, individual, fitness_method) for individual in x])
+
+def calculate_percentile_ranks_prob(array):
+    # Get the ranks of elements
+    ranks = rankdata(array)
+    # Calculate the total number of elements
+    N = len(array)
+    # Convert ranks to percentile ranks
+    percentile_ranks = (ranks - 1) / (N - 1)
+    return percentile_ranks / np.sum(percentile_ranks)
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -80,17 +90,14 @@ def mutate(child, mutation_rate):
     
     return child
 
-def mutate_stochastic_decaying(child, child_pfit, base_std=0.1):
+def mutate_stochastic_decaying(child, std, mutation_rate):
     """ Add random stochastic noise based on the fitness of the individual
     pfit must be in the range [-50, 50] 
     """
-    
-    std = base_std
-    learning_rate = 1 / (.1*sqrt((child_pfit+50)/4))
-    std = std * exp(learning_rate * np.random.normal(0, 1, size=1)[0] )
-    std = 5.0 if std > 5.0 else std
-
-    child += np.random.normal(0.0, std, size=child.shape)
+    # Create mask of random booleans
+    mask = np.random.rand(*child.shape) < mutation_rate
+    # Add random noise to weights and biases where mask is True
+    child[mask] += np.random.normal(0, std, size=child.shape)[mask]
     return child
     
 
@@ -135,6 +142,14 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
     add_amount = int(len(pop) / 10)
     pop_new[-add_amount:] = np.random.uniform(-1, 1, size=(add_amount, pop.shape[1]))
     
+    # Stochastic Noise
+    starting_std = 0.9  # Replace with your desired starting value
+    ending_std = 0.005  # Replace with your desired ending value
+    std_std = 0.5       # standard deviation of the standard deviation of the noise
+
+    std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
+    print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit):.4f}, Q5: {np.quantile(pfit, 0.05):.4f}, Q95: {np.quantile(pfit, 0.95):.4f}')
+
     if pick_parent_method != 'greedy':
         # For each individual in the population
         for i in range(len(pop)-add_amount):
@@ -144,7 +159,7 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
             # Mutate
             if mutation_type == 'normal':                child = mutate(child, mutation_rate)
             elif mutation_type == 'stochastic_decaying': 
-                child = mutate_stochastic_decaying(child, np.mean(pfit))
+                child = mutate_stochastic_decaying(child, std=std, mutation_rate=mutation_rate)
             
             # Add to new population
             pop_new[i] = child
@@ -160,7 +175,7 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
         if mutation_type   == 'normal':              child = mutate(child, mutation_rate)
         elif mutation_type == 'stochastic_decaying': 
             for i in range(len(pop)-add_amount):
-                child = mutate_stochastic_decaying(child, np.mean(pfit))
+                child = mutate_stochastic_decaying(child, std=std, mutation_rate=mutation_rate)
                 # Add to new population
                 pop_new[i] = child
 
@@ -177,6 +192,7 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
 
         # Run evaluation on new population n times and take avg
         n_times = 10
+
         pfit_combined = np.zeros((n_times, len(pop_combined)))
         for i in range(n_times):
             pfit_combined[i] = evaluate(env, pop_combined, fitness_method=fitness_method)
@@ -324,7 +340,7 @@ if __name__ == '__main__':
     normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
     fitness_method = "balanced" # "balanced", "default"
     randomini = "yes" # "yes", "no"
-    experiment_name = f'{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
+    experiment_name = f'A_3{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
     
     RUN_EVOLUTION = True
 
@@ -334,7 +350,7 @@ if __name__ == '__main__':
         main(
             experiment_name=experiment_name, enemies=enemies, n_hidden_neurons=n_hidden_neurons, 
             normalization_method=normalization_method, fitness_method=fitness_method, randomini=randomini,
-            gens=500, headless=True,
+            gens=500, headless=True, mutation_rate=0.2, pop_size=100, mutation_type='stochastic_decaying',
         )
         # Print time in minutes and seconds
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')

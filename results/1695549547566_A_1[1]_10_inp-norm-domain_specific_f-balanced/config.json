@@ -1,0 +1,23 @@
+{
+    "experiment_name": "A_1[1]_10_inp-norm-domain_specific_f-balanced",
+    "enemies": [
+        1
+    ],
+    "n_hidden_neurons": 10,
+    "domain_upper": 1,
+    "domain_lower": -1,
+    "pop_size": 100,
+    "gens": 500,
+    "mutation_rate": 0.2,
+    "normalization_method": "domain_specific",
+    "fitness_method": "balanced",
+    "pick_parent_method": "multinomial",
+    "survivor_method": "greedy",
+    "randomini": "yes",
+    "headless": true,
+    "mutation_type": "stochastic_decaying",
+    "gen": 132,
+    "best": 73.25373058064534,
+    "mean": 54.30298401105384,
+    "std": 9.380979118863157
+}
