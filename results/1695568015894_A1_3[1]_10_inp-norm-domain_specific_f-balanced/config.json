@@ -16,8 +16,8 @@
     "randomini": "yes",
     "headless": true,
     "mutation_type": "stochastic_decaying",
-    "gen": 121,
-    "best": 74.95991617294547,
-    "mean": 23.189768755535315,
-    "std": 16.68914891644858
+    "gen": 136,
+    "best": 87.48793393157959,
+    "mean": 28.007610589100917,
+    "std": 17.59540155250325
 }
