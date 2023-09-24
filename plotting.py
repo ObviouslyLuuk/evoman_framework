@@ -82,7 +82,7 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
     if randomini_eval:
         add_str = "_randomini"
 
-    runs = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
+    runs = []
     for folder in folders1:
         # Create empty df with columns for [gain, fitness, fitness_balanced, n_wins]
         df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
@@ -90,20 +90,22 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
         # Read results from eval_best.json
         with open(f'{results_dir}/{folder}/eval_best{add_str}.json', 'r') as f:
             saved = json.load(f)
-        for result in saved["results"]:
-            df = df.append(result, ignore_index=True)
-        # Turn wins list into number of wins
-        df['wins'] = df['wins'].apply(lambda x: sum(x))
+        df = pd.DataFrame(saved["results"])
+        # Turn wins list into number of wins if wins is a list type
+        if type(df['wins'][0]) == list:
+            df['wins'] = df['wins'].apply(lambda x: sum(x))
 
-        # Average over the 5 evals
+        # Average over the 5 evals, keep dims
         df = df.mean(axis=0)
-        runs = runs.append(df, ignore_index=True)
+        df = df.to_frame().transpose()
+        runs.append(df)
+    runs = pd.concat(runs, axis=0)
 
     data = runs[metric]
     plt.figure(figsize=figsize)
 
     if folders2:
-        runs = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
+        runs = []
         for folder in folders2:
             # Create empty df with columns for [gain, fitness, fitness_balanced, n_wins]
             df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
@@ -111,14 +113,18 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
             # Read results from eval_best.json
             with open(f'{results_dir}/{folder}/eval_best{add_str}.json', 'r') as f:
                 saved = json.load(f)
-            for result in saved["results"]:
-                df = df.append(result, ignore_index=True)
+            df = pd.DataFrame(saved["results"][0], index=[0])
+            for result in saved["results"][1:]:
+                df = pd.concat([df, pd.DataFrame(result, index=[0])], ignore_index=True)
             # Turn wins list into number of wins
-            df['wins'] = df['wins'].apply(lambda x: sum(x))
+            if type(df['wins'][0]) == list:
+                df['wins'] = df['wins'].apply(lambda x: sum(x))
 
             # Average over the 5 evals
             df = df.mean(axis=0)
-            runs = runs.append(df, ignore_index=True)
+            df = df.to_frame().transpose()
+            runs.append(df)
+        runs = pd.concat(runs, axis=0)
 
         data = [data, runs[metric]]
 
