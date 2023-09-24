@@ -1,5 +1,5 @@
 {
-    "experiment_name": "A_3[1]_10_inp-norm-domain_specific_f-balanced",
+    "experiment_name": "A1_3[1]_10_inp-norm-domain_specific_f-balanced",
     "enemies": [
         1
     ],
@@ -16,8 +16,8 @@
     "randomini": "yes",
     "headless": true,
     "mutation_type": "stochastic_decaying",
-    "gen": 203,
-    "best": 81.37492304320556,
-    "mean": 26.75204901404689,
-    "std": 17.883342751714252
+    "gen": 121,
+    "best": 74.95991617294547,
+    "mean": 23.189768755535315,
+    "std": 16.68914891644858
 }

@@ -37,14 +37,6 @@ def evaluate(env, x, fitness_method):
     x is a numpy array of individuals"""
     return np.array([simulation(env, individual, fitness_method) for individual in x])
 
-def calculate_percentile_ranks_prob(array):
-    # Get the ranks of elements
-    ranks = rankdata(array)
-    # Calculate the total number of elements
-    N = len(array)
-    # Convert ranks to percentile ranks
-    percentile_ranks = (ranks - 1) / (N - 1)
-    return percentile_ranks / np.sum(percentile_ranks)
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -90,15 +82,6 @@ def mutate(child, mutation_rate):
     
     return child
 
-def mutate_stochastic_decaying(child, std, mutation_rate):
-    """ Add random stochastic noise based on the fitness of the individual
-    pfit must be in the range [-50, 50] 
-    """
-    # Create mask of random booleans
-    mask = np.random.rand(*child.shape) < mutation_rate
-    # Add random noise to weights and biases where mask is True
-    child[mask] += np.random.normal(0, std, size=child.shape)[mask]
-    return child
     
 
 def select_survivors(pop, pfit, pop_size, best_idx, survivor_method):
@@ -120,6 +103,28 @@ def select_survivors(pop, pfit, pop_size, best_idx, survivor_method):
     
     return pop, pfit
 
+def exp_rank_fitness(array):
+    # Get the ranks of elements
+    ranks = rankdata(array)
+    # Calculate the total number of elements
+    N = len(array)
+    # Convert ranks to percentile ranks
+    percentile_ranks = (ranks - 1) / (N - 1)
+    exp_percentile_ranks = exp(1 * percentile_ranks)
+    return exp_percentile_ranks / np.sum(exp_percentile_ranks)
+
+def mutate_stochastic_decaying(childs, std, mutation_rate):
+    """ Add random stochastic noise based on the fitness of the individual
+    """
+    # Create mask of random booleans
+    mask = np.random.rand(*childs.shape) < mutation_rate
+    # Add random noise to weights and biases where mask is True
+    childs[mask] += np.random.normal(0, std, size=childs.shape)[mask]
+    return childs
+
+def generate_kids(pop, pfit_norm, number_of_kids):
+    idx = np.random.choice(np.arange(pop.shape[0]), size=number_of_kids, p=pfit_norm, replace=True)
+    return pop[idx]
 
 def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, randomini):
     """Perform one step of evolution.
@@ -127,82 +132,39 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses.
     mutation_rate is the mutation rate."""
-    # Normalize fitnesses
-    pfit_norm = normalize_pop_fitness(pfit)
+    # Step 4: Normalize fitnesses 
+    pfit_norm = exp_rank_fitness(pfit)
+    
+    # Step 5: Generate kids 
+    number_of_best = 20 # the number of top performers to keep
+    number_of_kids = len(pop) - number_of_best
+    children_pop = generate_kids(pop, pfit_norm, number_of_kids)
+    best_pop = pop[np.argsort(pfit)[::-1][:number_of_best]]
 
-    # Print amount of duplicates
-    duplicates = len(pfit) - len(np.unique(pfit))
-    print(f'Amount of duplicate fitnesses: {duplicates}')
-    # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
-    
-    # Create new population
-    pop_new = np.zeros_like(pop)
-    
-    # Add random individuals
-    add_amount = int(len(pop) / 10)
-    pop_new[-add_amount:] = np.random.uniform(-1, 1, size=(add_amount, pop.shape[1]))
-    
+    # Step 7: Mutate kids
     # Stochastic Noise
-    starting_std = 0.9  # Replace with your desired starting value
-    ending_std = 0.005  # Replace with your desired ending value
+    starting_std = 0.25  # Replace with your desired starting value
+    ending_std = 0.01  # Replace with your desired ending value
     std_std = 0.5       # standard deviation of the standard deviation of the noise
 
     std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
-    print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit):.4f}, Q5: {np.quantile(pfit, 0.05):.4f}, Q95: {np.quantile(pfit, 0.95):.4f}')
+    print(f'>>STD(std): {std:.6f} . Fitness: mean: {np.mean(pfit):.2f}, Q5: {np.quantile(pfit, 0.05):.2f}, Q50: {np.quantile(pfit, 0.5):.2f}, Q95: {np.quantile(pfit, 0.95):.2f}, std: {np.std(pfit):.2f}')
 
-    if pick_parent_method != 'greedy':
-        # For each individual in the population
-        for i in range(len(pop)-add_amount):
-            # Copy parent
-            child = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
+    children_pop = mutate_stochastic_decaying(children_pop, std=std, mutation_rate=mutation_rate)
 
-            # Mutate
-            if mutation_type == 'normal':                child = mutate(child, mutation_rate)
-            elif mutation_type == 'stochastic_decaying': 
-                child = mutate_stochastic_decaying(child, std=std, mutation_rate=mutation_rate)
-            
-            # Add to new population
-            pop_new[i] = child
-        
-    else:
-        # Pick 10 best parents
-        best_parents = np.argsort(pfit_norm)[::-1][:10]
+    # Step 8: Combine kids with parents
+    pop_combined = np.vstack((best_pop, children_pop))
 
-        # Copy and repeat parents
-        pop_new[:-add_amount] = np.repeat(pop[best_parents], int((len(pop)-add_amount)/10), axis=0)
+    # Run evaluation on new population n times and take avg
+    n_times = 10
 
-        # Mutate
-        if mutation_type   == 'normal':              child = mutate(child, mutation_rate)
-        elif mutation_type == 'stochastic_decaying': 
-            for i in range(len(pop)-add_amount):
-                child = mutate_stochastic_decaying(child, std=std, mutation_rate=mutation_rate)
-                # Add to new population
-                pop_new[i] = child
+    pfit_combined = np.zeros((n_times, len(pop_combined)))
+    for i in range(n_times):
+        pfit_combined[i] = evaluate(env, pop_combined, fitness_method=fitness_method)
+    pfit_combined = np.mean(pfit_combined, axis=0)
 
-    # Evaluate new population
-    if randomini == "no":
-        pfit_new = evaluate(env, pop_new, fitness_method=fitness_method)
-        
-        # Combine old and new population
-        pop_combined = np.vstack((pop, pop_new))
-        pfit_combined = np.append(pfit, pfit_new)
-    else:
-        # Combine old and new population
-        pop_combined = np.vstack((pop, pop_new))
-
-        # Run evaluation on new population n times and take avg
-        n_times = 10
-
-        pfit_combined = np.zeros((n_times, len(pop_combined)))
-        for i in range(n_times):
-            pfit_combined[i] = evaluate(env, pop_combined, fitness_method=fitness_method)
-        pfit_combined = np.mean(pfit_combined, axis=0)
-
-    # Select survivors
-    pop_new, pfit_new = select_survivors(pop_combined, pfit_combined, len(pop), np.argmax(pfit), survivor_method)
-    
     # Return new population and fitnesses
-    return pop_new, pfit_new
+    return pop_combined, pfit_combined
 
 
 def main(
@@ -340,7 +302,7 @@ if __name__ == '__main__':
     normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
     fitness_method = "balanced" # "balanced", "default"
     randomini = "yes" # "yes", "no"
-    experiment_name = f'A_3{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
+    experiment_name = f'A1_3{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
     
     RUN_EVOLUTION = True
 
