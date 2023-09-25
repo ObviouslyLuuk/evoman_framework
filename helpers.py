@@ -40,6 +40,8 @@ def save_results(use_folder, results_dict, kwarg_dict={}):
     if os.path.exists(f'{RESULTS_DIR}/{use_folder}/results.csv'):
         df = pd.read_csv(f'{RESULTS_DIR}/{use_folder}/results.csv')
     else:
+        # Make dirs
+        os.makedirs(f'{RESULTS_DIR}/{use_folder}', exist_ok=True)
         df = pd.DataFrame(columns=results_dict.keys())
 
     # Concat new row
