@@ -1,12 +1,24 @@
 from optimization_dummy import main, run_test
 import time
-import os
+import argparse
 from helpers import RESULTS_DIR, find_folders, compare_configs
 
 if __name__ == '__main__':
+    # Get arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--randomini',              type=str, default='no',         help='usage: --randomini yes/no')
+    parser.add_argument('--multi_ini',              type=bool, default=False,       help='usage: --multi_ini True/False')
+    parser.add_argument('--normalization_method',   type=str, default='default',    help='usage: --normalization_method default/domain_specific/around_0')
+    parser.add_argument('--fitness_method',         type=str, default='default',    help='usage: --fitness_method default/balanced')
+    parser.add_argument('--pick_parent_method',     type=str, default='tournament', help='usage: --pick_parent_method multinomial/tournament/greedy')
+    parser.add_argument('--survivor_method',        type=str, default='multinomial', help='usage: --survivor_method greedy/multinomial')
+    parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default')
+
+    args = parser.parse_args()
+
     enemy_sets = [[1], [2], [3], [4], [5], [6], [7], [8]]
 
-    RUN_EVOLUTION = False
+    RUN_EVOLUTION = True
     RANDOMINI_TEST = "yes"
 
     runs_per_experiment = 10
@@ -20,11 +32,13 @@ if __name__ == '__main__':
             config = {
                 # "experiment_name":      'optimization_test',
                 "enemies":              enemies,            # [1, 2, 3, 4, 5, 6, 7, 8]
-                "randomini":            "no",               # "yes", "no"
-                "normalization_method": "domain_specific",  # "default", "domain_specific", "around_0"
-                "fitness_method":       "balanced",         # "default", "balanced"
-                "pick_parent_method":   "multinomial",
-                "survivor_method":      "greedy",
+                "randomini":            args.randomini,     # "yes", "no"
+                "multi_ini":            args.multi_ini,     # True, False
+                "normalization_method": args.normalization_method, # "default", "domain_specific", "around_0"
+                "fitness_method":       args.fitness_method,       # "default", "balanced"
+                "pick_parent_method":   args.pick_parent_method,   # "multinomial", "tournament", "greedy"
+                "survivor_method":      args.survivor_method,      # "greedy", "multinomial"
+                "crossover_method":     args.crossover_method,     # "none", "default"
                 "gens":                 30,
                 "n_hidden_neurons":     10,
                 "pop_size":             100,

@@ -117,7 +117,7 @@ def select_survivors(pfit, survivor_method):
     return idx
 
 
-def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method, multi_ini=False, enemies=None):
+def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, multi_ini=False, enemies=None):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -136,7 +136,7 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick
     
     # Add random individuals
     add_amount = int(len(pop) / 10)
-    pop_new[-add_amount:] = np.random.uniform(-1, 1, size=(add_amount, pop.shape[1]))
+    pop_new[-add_amount:] = np.random.uniform(dom_lower, dom_upper, size=(add_amount, pop.shape[1]))
     
     if pick_parent_method != 'greedy':
         # For each individual in the population
@@ -158,6 +158,9 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick
 
         # Mutate
         pop_new = mutate(pop_new, mutation_rate)
+
+    # Clip to domain
+    pop_new = np.clip(pop_new, -1, 1)
 
     # Evaluate new population
     log_pfit_new, pfit_new = evaluate(env, pop_new, fitness_method=fitness_method, multi_ini=multi_ini, enemies=enemies)
@@ -193,12 +196,18 @@ def main(
         randomini = "no",
         headless = True,
         multi_ini = True,
+        crossover_method = "none",
 ):
     kwarg_dict = locals()
 
     # choose this for not using visuals and thus making experiments faster
+    visuals = True
     if headless:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
+        visuals = False
+
+    # Make results dir if it doesn't exist
+    os.makedirs(RESULTS_DIR, exist_ok=True)
 
     # Find folder
     use_folder, start_gen = find_folder(kwarg_dict)
@@ -209,10 +218,10 @@ def main(
         os.makedirs(f'{RESULTS_DIR}/{use_folder}')
 
     multi = "no"
+    actual_enemies = enemies
     if len(enemies) > 1 and randomini == "no": # if randomini is yes, then we manually do multi
         multi = "yes"
     elif randomini == "yes":
-        actual_enemies = enemies
         enemies = [enemies[0]]
 
     # initializes simulation in individual evolution mode, for single static enemy.
@@ -224,7 +233,7 @@ def main(
                     enemymode="static",
                     level=2,
                     speed="fastest",
-                    visuals=False,
+                    visuals=visuals,
                     randomini=randomini)
     env.player_controller.env = env
 
@@ -241,7 +250,7 @@ def main(
     for gen in range(start_gen, gens):
         # Perform one step of evolution
         pop, pfit, log_pfit = evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method=fitness_method, 
-                                   pick_parent_method=pick_parent_method, survivor_method=survivor_method,
+                                   pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
                                    multi_ini=multi_ini, enemies=actual_enemies)
         
         # Get stats
@@ -326,8 +335,9 @@ if __name__ == '__main__':
         "multi_ini":            True,               # True, False
         "normalization_method": "default",  # "default", "domain_specific", "around_0"
         "fitness_method":       "balanced",         # "default", "balanced"
-        "pick_parent_method":   "multinomial", # "tournament", "multinomial"
+        "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "greedy", # "greedy", "multinomial"
+        "crossover_method":     "none",     # "none", "default"
         "gens":                 100,
         "n_hidden_neurons":     10,
         "pop_size":             100,

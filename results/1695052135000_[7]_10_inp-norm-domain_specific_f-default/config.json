@@ -19,5 +19,6 @@
     "best": 89.67289246928257,
     "mean": 82.46798210067792,
     "std": 6.456800296735933,
-    "multi_ini": false
+    "multi_ini": false,
+    "crossover_method": "none"
 }

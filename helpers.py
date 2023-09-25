@@ -158,7 +158,7 @@ def compare_configs(folders, config=None, results_dir=RESULTS_DIR, printing=Fals
         # Check if config.json exists
         if not os.path.exists(f'{results_dir}/{folder}/config.json'):
             # Delete folder and contents
-            os.system(f'rm -rf {results_dir}/{folder}')
+            # os.system(f'rm -rf {results_dir}/{folder}')
             continue
         left_over.append(folder)
     folders = left_over

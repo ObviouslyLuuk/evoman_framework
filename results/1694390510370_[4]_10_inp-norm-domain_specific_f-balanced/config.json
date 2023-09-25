@@ -19,5 +19,6 @@
     "mean": 32.605900167352296,
     "std": 7.030831799882935,
     "randomini": "no",
-    "multi_ini": false
+    "multi_ini": false,
+    "crossover_method": "none"
 }
