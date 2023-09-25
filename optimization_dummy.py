@@ -302,7 +302,7 @@ if __name__ == '__main__':
     normalization_method = "domain_specific" # "default", "domain_specific", "around_0"
     fitness_method = "balanced" # "balanced", "default"
     randomini = "yes" # "yes", "no"
-    experiment_name = f'A1_3{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
+    experiment_name = f'A1_5{enemies}_{n_hidden_neurons}_inp-norm-{normalization_method}_f-{fitness_method}'
     
     RUN_EVOLUTION = True
 
