@@ -116,6 +116,24 @@ def select_survivors(pfit, survivor_method):
         idx[0] = np.argmax(pfit) # Keep best
     return idx
 
+def crossover(parents, crossover_method):
+    """Perform crossover on parents, return children.
+    parents is a numpy array of parents, where each parent is a numpy array of weights and biases.
+    crossover_method default takes parents two by two and weighs the child's genes by a random factor between 0 and 1.
+    Two children are produced per pair of parents."""
+    if crossover_method == 'default':
+        children = np.zeros((len(parents), parents.shape[1]))
+        for i in range(0, len(parents), 2):
+            # weigh parents
+            p1 = parents[i]
+            p2 = parents[i+1]
+            for j in range(2):
+                weight = np.random.rand()
+                children[i+j] = p1*weight + p2*(1-weight)
+        return children
+    elif crossover_method == 'none':
+        return parents.copy()
+
 
 def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, multi_ini=False, enemies=None):
     """Perform one step of evolution.
@@ -138,26 +156,23 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick
     add_amount = int(len(pop) / 10)
     pop_new[-add_amount:] = np.random.uniform(dom_lower, dom_upper, size=(add_amount, pop.shape[1]))
     
-    if pick_parent_method != 'greedy':
-        # For each individual in the population
-        for i in range(len(pop)-add_amount):
-            # Copy parent
-            child = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
-
-            # Mutate
-            child = mutate(child, mutation_rate)
-            
-            # Add to new population
-            pop_new[i] = child
-    else:
+    parents = np.zeros((len(pop)-add_amount, pop.shape[1]))
+    if pick_parent_method == "greedy":
         # Pick 10 best parents
         best_parents = np.argsort(pfit_norm)[::-1][:10]
 
         # Copy and repeat parents
-        pop_new[:-add_amount] = np.repeat(pop[best_parents], int((len(pop)-add_amount)/10), axis=0)
+        parents = np.repeat(pop[best_parents].copy(), int((len(pop)-add_amount)/10), axis=0)
+    else:
+        # Select parents
+        for i in range(len(pop)-add_amount):
+            parents[i] = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
 
-        # Mutate
-        pop_new = mutate(pop_new, mutation_rate)
+    # Crossover
+    pop_new[:-add_amount] = crossover(parents, crossover_method)
+
+    # Mutate
+    pop_new = mutate(pop_new, mutation_rate)
 
     # Clip to domain
     pop_new = np.clip(pop_new, -1, 1)
@@ -331,21 +346,21 @@ if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
         "enemies":              [3],                # [1, 2, 3, 4, 5, 6, 7, 8]
-        "randomini":            "yes",               # "yes", "no"
-        "multi_ini":            True,               # True, False
+        "randomini":            "no",               # "yes", "no"
+        "multi_ini":            False,               # True, False
         "normalization_method": "default",  # "default", "domain_specific", "around_0"
         "fitness_method":       "balanced",         # "default", "balanced"
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
-        "survivor_method":      "greedy", # "greedy", "multinomial"
-        "crossover_method":     "none",     # "none", "default"
-        "gens":                 100,
+        "survivor_method":      "multinomial", # "greedy", "multinomial"
+        "crossover_method":     "default",     # "none", "default"
+        "gens":                 30,
         "n_hidden_neurons":     10,
         "pop_size":             100,
     }
 
     config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
 
-    RUN_EVOLUTION = False
+    RUN_EVOLUTION = True
     RANDOMINI_TEST = "yes"
 
     # Track time

@@ -96,7 +96,7 @@ def get_best(config):
     """
     Returns the folder with the best fitness for the given config
     """
-    folders = compare_configs(find_folders(config))
+    folders = find_folders(config)
     fitness_by_folder = {}
     for folder in folders:
         with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
