@@ -5,30 +5,53 @@ import numpy as np
 import json
 RESULTS_DIR = 'results'
 
-def save_results(use_folder, gen, best, mean, std, kwarg_dict={}):
+ENEMY_DEFAULT_POSITIONS = {
+    1: 640,
+    2: 588,
+	3: 588,
+	4: 537,
+	5: 500,
+	6: 588,
+	7: 635,
+	8: 628,
+}
+
+ENEMY_RANDOM_POSITIONS = {
+	1: [640,500,400,300],
+	2: [630,610,560,530],
+	3: [640,500,400,300],
+	4: [640,500,400,300],
+	5: [640,500,400,300],
+	6: [640,500,400,300],
+	7: [640,500,400,300],
+	8: [640,500,400,300],
+}
+
+ENEMY_POSITIONS = {n: sorted(list(set([ENEMY_DEFAULT_POSITIONS[n]] + ENEMY_RANDOM_POSITIONS[n]))) for n in range(1,9)}
+# ENEMY_POSITIONS[1] = [300]
+
+def save_results(use_folder, results_dict, kwarg_dict={}):
     """Save results to csv and print them."""
-    experiment_name = '_'.join(use_folder.split('_')[1:])
-    print(f'\n GENERATION {gen} best: {round(best,6)} mean: {round(mean,6)} std: {round(std,6)}')
+    print(f'\n GENERATION {results_dict["gen"]                   } best: {round(results_dict["best"],6)} mean: {round(results_dict["mean"],6)} std: {round(results_dict["std"],6)}')
+    print(  f'  default f: {" "*(len(str(results_dict["gen"]))-1)} best: {round(results_dict["best_log"],6)} mean: {round(results_dict["mean_log"],6)} std: {round(results_dict["std_log"],6)}')
 
     # Save results using pandas
     # Load csv if it exists
     if os.path.exists(f'{RESULTS_DIR}/{use_folder}/results.csv'):
         df = pd.read_csv(f'{RESULTS_DIR}/{use_folder}/results.csv')
     else:
-        df = pd.DataFrame(columns=['gen', 'best', 'mean', 'std'])
+        df = pd.DataFrame(columns=results_dict.keys())
 
-    # Add new row
-    df = df.append({'gen': gen, 'best': best, 'mean': mean, 'std': std}, ignore_index=True)
+    # Concat new row
+    new_row = pd.DataFrame([results_dict.values()], columns=results_dict.keys())
+    df = pd.concat([df, new_row], ignore_index=True)
     df['gen'] = df['gen'].astype(int)
 
     # Save to csv
     df.to_csv(f'{RESULTS_DIR}/{use_folder}/results.csv', index=False)
 
     # Save json with all kwargs plus gen, best, mean, std
-    kwarg_dict['gen'] = gen
-    kwarg_dict['best'] = best
-    kwarg_dict['mean'] = mean
-    kwarg_dict['std'] = std
+    kwarg_dict.update(results_dict)
     with open(f'{RESULTS_DIR}/{use_folder}/config.json', 'w') as f:
         json.dump(kwarg_dict, f, indent=4)
 
@@ -106,13 +129,13 @@ def load_population(domain_lower,
         # Initialize population
         pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
         # Eval
-        pfit = eval_fn(env, pop, fitness_method)
+        pfit_log, pfit = eval_fn(env, pop, fitness_method)
         env.update_solutions([pop, pfit])
 
     best_idx = np.argmax(pfit)
     mean = np.mean(pfit)
     std = np.std(pfit)
-    return pop, pfit, best_idx, mean, std
+    return pop, pfit, pfit_log, best_idx, mean, std
 
 
 
@@ -130,11 +153,15 @@ def compare_config(config1, config2):
 def compare_configs(folders, config=None, results_dir=RESULTS_DIR, printing=False):
     """Return list of folders with the same config. Only keys in the first config are checked."""
     # First remove folders that don't have a config.json
+    left_over = []
     for folder in folders:
         # Check if config.json exists
         if not os.path.exists(f'{results_dir}/{folder}/config.json'):
             # Delete folder and contents
             os.system(f'rm -rf {results_dir}/{folder}')
+            continue
+        left_over.append(folder)
+    folders = left_over
 
     # Check if config.json is the same for all runs
     if not config:

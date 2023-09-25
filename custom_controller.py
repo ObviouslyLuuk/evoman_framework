@@ -78,9 +78,11 @@ def normalize_inputs(inputs, method):
 
 # implements controller structure for player
 class player_controller(Controller):
-	def __init__(self, _n_hidden, normalization_method="default"):
+	def __init__(self, _n_hidden, normalization_method="default", x_dist=None, env=None):
 		self.n_hidden = [_n_hidden]
 		self.normalization_method = normalization_method
+		self.x_dist = x_dist
+		self.env = env
 
 	def set(self,controller, n_inputs):
 		# Number of hidden neurons
@@ -105,6 +107,11 @@ class player_controller(Controller):
 			self.weights1 = controller[5:].reshape((n_inputs, 5))
 
 	def control(self, inputs, controller):
+		if self.env is not None and self.env.time == 1:
+			if self.x_dist is not None:
+				self.env.enemy.rect.x = self.x_dist
+			# print("Enemy position: ", self.env.enemy.rect.x)
+
 		inputs = normalize_inputs(inputs, method=self.normalization_method)
 
 		if self.n_hidden[0]>0:

@@ -7,7 +7,7 @@
     "domain_upper": 1,
     "domain_lower": -1,
     "pop_size": 100,
-    "gens": 20,
+    "gens": 100,
     "mutation_rate": 0.2,
     "normalization_method": "default",
     "fitness_method": "balanced",
@@ -15,8 +15,9 @@
     "survivor_method": "greedy",
     "randomini": "yes",
     "headless": true,
-    "gen": 19,
+    "gen": 28,
     "best": 47.17399989261955,
     "mean": 37.80586731722544,
-    "std": 4.511393710977895
+    "std": 4.511393710977895,
+    "multi_ini": false
 }
