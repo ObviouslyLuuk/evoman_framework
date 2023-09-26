@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('--fitness_method',         type=str, default='default',    help='usage: --fitness_method default/balanced')
     parser.add_argument('--pick_parent_method',     type=str, default='tournament', help='usage: --pick_parent_method multinomial/tournament/greedy')
     parser.add_argument('--survivor_method',        type=str, default='multinomial', help='usage: --survivor_method greedy/multinomial')
-    parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default')
+    parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default/ensemble')
     parser.add_argument('--mutation_type',          type=str, default='normal',     help='usage: --mutation_type normal/stochastic_decaying')
 
     args = parser.parse_args()
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                 "fitness_method":       args.fitness_method,       # "default", "balanced"
                 "pick_parent_method":   args.pick_parent_method,   # "multinomial", "tournament", "greedy"
                 "survivor_method":      args.survivor_method,      # "greedy", "multinomial"
-                "crossover_method":     args.crossover_method,     # "none", "default"
+                "crossover_method":     args.crossover_method,     # "none", "default", "ensemble"
                 "mutation_type":        args.mutation_type,        # "normal", "stochastic_decaying"
                 "gens":                 30,
                 "n_hidden_neurons":     10,
