@@ -342,22 +342,25 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(config, randomini_test="no", multi_ini_test=False):
+def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_best=None):
     """Run the best solution for the given config"""
     enemies = config['enemies']
+
+    folder = get_best(config, based_on_eval_best=based_on_eval_best)
+    with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+        config = json.load(f)
     n_hidden_neurons = config['n_hidden_neurons']
     normalization_method = config['normalization_method']
     fitness_method = config['fitness_method']
 
-    folder = get_best(config)
-    with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
-        config = json.load(f)
+    print(config)
 
     best_solution = np.loadtxt(f'{RESULTS_DIR}/{folder}/best.txt')
 
     print(f'\nRunning best solution for enemy {enemies}')
     print(f'Best folder: {folder}')
     print(f'Best fitness: {config["best"]}')
+    print(f'Best default fitness: {config["best_log"]}')
 
     env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
                     enemies=[enemies[0]],

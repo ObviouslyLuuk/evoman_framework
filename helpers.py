@@ -94,17 +94,24 @@ def find_folders(config):
         print('No folders found with given config')
     return folders
 
-def get_best(config):
+def get_best(config, based_on_eval_best=None):
     """
-    Returns the folder with the best fitness for the given config
+    Returns the folder with the best fitness for the given config.
+    based_on_eval_best: If None, use config.json, if '' or '_multi-ini' or '_randomini' use eval_best{}.json
     """
     folders = find_folders(config)
     fitness_by_folder = {}
     for folder in folders:
-        with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
-            config = json.load(f)
-        best_fitness = config['best']
-        fitness_by_folder[folder] = best_fitness
+        if based_on_eval_best is None:
+            with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+                config = json.load(f)
+            best_fitness = config['best_log']
+            fitness_by_folder[folder] = best_fitness
+        else:
+            with open(f'{RESULTS_DIR}/{folder}/eval_best{based_on_eval_best}.json', 'r') as f:
+                saved = json.load(f)
+            best_fitness = saved['results'][0]['gain']
+            fitness_by_folder[folder] = best_fitness
     best_folder = max(fitness_by_folder, key=fitness_by_folder.get)
     return best_folder
 

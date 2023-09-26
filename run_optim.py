@@ -19,8 +19,9 @@ if __name__ == '__main__':
 
     enemy_sets = [[1], [2], [3], [4], [5], [6], [7], [8]]
 
-    RUN_EVOLUTION = True
-    RANDOMINI_TEST = "yes"
+    RUN_EVOLUTION = False
+    RANDOMINI_TEST = "no"
+    MULTI_INI_TEST = False
 
     runs_per_experiment = 10
     if not RUN_EVOLUTION:
@@ -46,7 +47,7 @@ if __name__ == '__main__':
                 "pop_size":             100,
             }
 
-            config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
+            # config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
 
             if RUN_EVOLUTION:
                 logged_runs = compare_configs(find_folders(config), config=config, results_dir=RESULTS_DIR)
@@ -60,4 +61,10 @@ if __name__ == '__main__':
                 print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
                 print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
             else:
-                run_test(config, randomini_test=RANDOMINI_TEST)
+                config = {
+                    "enemies": enemies,
+                }
+                based_on_eval_best = ''
+                if MULTI_INI_TEST:
+                    based_on_eval_best = '_multi-ini'
+                run_test(config, randomini_test=RANDOMINI_TEST, multi_ini_test=MULTI_INI_TEST, based_on_eval_best=based_on_eval_best)
