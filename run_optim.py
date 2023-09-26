@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 "pop_size":             100,
             }
 
-            # config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
+            config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
 
             if RUN_EVOLUTION:
                 logged_runs = compare_configs(find_folders(config), config=config, results_dir=RESULTS_DIR)
