@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 from helpers import RESULTS_DIR
 
-def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR):
+def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, default_fitness=True):
     """
     Creates a plot of the fitness vs generation for the given folder.
     One line for the average best fitness, one for the average mean fitness and a band for the standard deviation of both.
@@ -23,15 +23,18 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     min_len = min([len(df) for df in dfs])
     
     # Aggregate data
-    aggr_df = pd.concat(dfs).groupby('gen').agg({'best': ['mean', 'std'], 'mean': ['mean', 'std']})
+    f_add_str = ""
+    if default_fitness:
+        f_add_str = "_log"
+    aggr_df = pd.concat(dfs).groupby('gen').agg({'best'+f_add_str: ['mean', 'std'], 'mean'+f_add_str: ['mean', 'std']})
     aggr_df = aggr_df.iloc[:min_len] # Clip to shortest df
     
     # Plot gen vs best fitness
     plt.figure(figsize=figsize)
-    plt.plot(aggr_df['best','mean'], color='green')
-    plt.plot(aggr_df['mean','mean'], color='green', linestyle='dashed')
-    plt.fill_between(range(len(aggr_df['best','mean'])), aggr_df['best','mean'] - aggr_df['best','std'], aggr_df['best','mean'] + aggr_df['best','std'], alpha=0.3, color='green')
-    plt.fill_between(range(len(aggr_df['mean','mean'])), aggr_df['mean','mean'] - aggr_df['mean','std'], aggr_df['mean','mean'] + aggr_df['mean','std'], alpha=0.1, color='green')
+    plt.plot(aggr_df['best'+f_add_str,'mean'], color='green')
+    plt.plot(aggr_df['mean'+f_add_str,'mean'], color='green', linestyle='dashed')
+    plt.fill_between(range(len(aggr_df['best'+f_add_str,'mean'])), aggr_df['best'+f_add_str,'mean'] - aggr_df['best'+f_add_str,'std'], aggr_df['best'+f_add_str,'mean'] + aggr_df['best'+f_add_str,'std'], alpha=0.3, color='green')
+    plt.fill_between(range(len(aggr_df['mean'+f_add_str,'mean'])), aggr_df['mean'+f_add_str,'mean'] - aggr_df['mean'+f_add_str,'std'], aggr_df['mean'+f_add_str,'mean'] + aggr_df['mean'+f_add_str,'std'], alpha=0.1, color='green')
 
     if folders2:
         dfs = []
@@ -40,19 +43,19 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             dfs.append(pd.read_csv(f'{results_dir}/{folder}/results.csv'))
         
         # Aggregate data
-        aggr_df = pd.concat(dfs).groupby('gen').agg({'best': ['mean', 'std'], 'mean': ['mean', 'std']})
+        aggr_df = pd.concat(dfs).groupby('gen').agg({'best'+f_add_str: ['mean', 'std'], 'mean'+f_add_str: ['mean', 'std']})
         aggr_df = aggr_df.iloc[:min_len]
 
         # Plot gen vs best fitness
-        plt.plot(aggr_df['best','mean'], color='blue')
-        plt.plot(aggr_df['mean','mean'], color='blue', linestyle='dashed')
-        plt.fill_between(range(len(aggr_df['best','mean'])), aggr_df['best','mean'] - aggr_df['best','std'], aggr_df['best','mean'] + aggr_df['best','std'], alpha=0.3, color='blue')
-        plt.fill_between(range(len(aggr_df['mean','mean'])), aggr_df['mean','mean'] - aggr_df['mean','std'], aggr_df['mean','mean'] + aggr_df['mean','std'], alpha=0.1, color='blue')
+        plt.plot(aggr_df['best'+f_add_str,'mean'], color='blue')
+        plt.plot(aggr_df['mean'+f_add_str,'mean'], color='blue', linestyle='dashed')
+        plt.fill_between(range(len(aggr_df['best'+f_add_str,'mean'])), aggr_df['best'+f_add_str,'mean'] - aggr_df['best'+f_add_str,'std'], aggr_df['best'+f_add_str,'mean'] + aggr_df['best'+f_add_str,'std'], alpha=0.3, color='blue')
+        plt.fill_between(range(len(aggr_df['mean'+f_add_str,'mean'])), aggr_df['mean'+f_add_str,'mean'] - aggr_df['mean'+f_add_str,'std'], aggr_df['mean'+f_add_str,'mean'] + aggr_df['mean'+f_add_str,'std'], alpha=0.1, color='blue')
 
         # Add legend
         methods = list(variable.values())[0]
         plt.legend(
-            [f'Avg Best {methods[0]}', f'Avg Mean {methods[0]}', f'Avg Best {methods[1]}', f'Avg Mean {methods[1]}', f'Best Std {methods[0]}', f'Mean Std {methods[0]}', f'Best Std {methods[1]}', f'Mean Std {methods[1]}'],
+            [f'Avg Best {methods[0]}', f'Avg Mean {methods[0]}', f'Best Std {methods[0]}', f'Mean Std {methods[0]}', f'Avg Best {methods[1]}', f'Avg Mean {methods[1]}', f'Best Std {methods[1]}', f'Mean Std {methods[1]}'],
             bbox_to_anchor=(1.05, 1), loc='upper left'
         )
     else:
@@ -61,14 +64,17 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
 
     plt.title('Fitness vs generation')
     plt.xlabel('Generation')
-    plt.ylabel('Fitness')
+    if default_fitness:
+        plt.ylabel('Fitness (default)')
+    else:
+        plt.ylabel('Fitness')
     if save_png:
         if not os.path.exists(f'plots/{str(variable)}'):
             os.makedirs(f'plots/{str(variable)}')
         plt.savefig(f'plots/{str(variable)}/plot.png')
     plt.show()
 
-def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, randomini_eval=False):
+def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, randomini_eval=False, multi_ini_eval=False):
     """
     Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution in eval_best.json.
     Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
@@ -81,6 +87,8 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
     add_str = ""
     if randomini_eval:
         add_str = "_randomini"
+    elif multi_ini_eval:
+        add_str = "_multi-ini"
 
     runs = []
     for folder in folders1:

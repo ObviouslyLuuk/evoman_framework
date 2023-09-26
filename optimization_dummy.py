@@ -294,7 +294,7 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(config, randomini_test="no"):
+def run_test(config, randomini_test="no", multi_ini_test=False):
     """Run the best solution for the given config"""
     enemies = config['enemies']
     n_hidden_neurons = config['n_hidden_neurons']
@@ -322,24 +322,28 @@ def run_test(config, randomini_test="no"):
                     randomini=randomini_test)
     env.player_controller.env = env
 
-    for enemy in enemies:
-        env.enemies = [enemy]
-        print(f'Running enemy {enemy}')
-        if randomini_test == "yes":
-            enemy_positions = ENEMY_POSITIONS[enemy]
-        else:
-            enemy_positions = [None]
+    def print_result(f, p, e, t):
+        win_condition = e <= 0
+        win_str = 'WON\n' if win_condition else 'LOST\n'
+        print(f'Fitness: {f}, player life: {p}, enemy life: {e}, time: {t}')
+        if fitness_method == 'balanced':
+            print(f'custom fitness: {fitness_balanced(p, e, t)}')
+        print(win_str)
 
-        for enemy_position in enemy_positions:
-            env.player_controller.x_dist = enemy_position
-            
-            f,p,e,t = env.play(pcont=best_solution)
-            win_condition = e <= 0
-            win_str = 'WON\n' if win_condition else 'LOST\n'
-            print(f'Fitness: {f}, player life: {p}, enemy life: {e}, time: {t}')
-            if fitness_method == 'balanced':
-                print(f'custom fitness: {fitness_balanced(p, e, t)}')
-            print(win_str)
+    if not multi_ini_test:
+        f,p,e,t = env.play(pcont=best_solution)
+        print_result(f, p, e, t)
+    else:
+        for enemy in enemies:
+            env.enemies = [enemy]
+            print(f'Running enemy {enemy}')
+            enemy_positions = ENEMY_POSITIONS[enemy]
+
+            for enemy_position in enemy_positions:
+                env.player_controller.x_dist = enemy_position
+                
+                f,p,e,t = env.play(pcont=best_solution)
+                print_result(f, p, e, t)
 
 
 if __name__ == '__main__':

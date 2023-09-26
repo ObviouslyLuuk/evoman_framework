@@ -1,0 +1,27 @@
+{
+    "experiment_name": "[5]_10_inp-norm-default_f-default",
+    "enemies": [
+        5
+    ],
+    "n_hidden_neurons": 10,
+    "domain_upper": 1,
+    "domain_lower": -1,
+    "pop_size": 100,
+    "gens": 30,
+    "mutation_rate": 0.2,
+    "normalization_method": "default",
+    "fitness_method": "default",
+    "pick_parent_method": "tournament",
+    "survivor_method": "greedy",
+    "randomini": "no",
+    "headless": true,
+    "multi_ini": false,
+    "crossover_method": "none",
+    "gen": 29,
+    "best": 95.00278772623588,
+    "mean": 94.24701914452505,
+    "std": 0.38704727041200687,
+    "best_log": 95.00278772623588,
+    "mean_log": 94.24701914452505,
+    "std_log": 0.38704727041200687
+}
