@@ -23,5 +23,6 @@
     "std": 0.0,
     "best_log": 92.93833644349735,
     "mean_log": 92.93833644349735,
-    "std_log": 0.0
+    "std_log": 0.0,
+    "mutation_type": "normal"
 }

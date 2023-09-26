@@ -15,7 +15,7 @@
     "survivor_method": "greedy",
     "randomini": "yes",
     "headless": true,
-    "mutation_type": "stochastic_decaying",
+    "mutation_type": "normal",
     "gen": 337,
     "best": 80.9875794067988,
     "mean": 59.72378094704683,

@@ -192,18 +192,18 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
     # Crossover
     pop_new[:-add_amount] = crossover(parents, crossover_method)
 
-    # Mutate    
-    # Stochastic Noise
-    starting_std = 0.9  # Replace with your desired starting value
-    ending_std = 0.005  # Replace with your desired ending value
-    std_std = 0.5       # standard deviation of the standard deviation of the noise
-
-    std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
-    print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit):.4f}, Q5: {np.quantile(pfit, 0.05):.4f}, Q95: {np.quantile(pfit, 0.95):.4f}')
-    
+    # Mutate
     if mutation_type == 'normal':
         pop_new = mutate(pop_new, mutation_rate)
     elif mutation_type == 'stochastic_decaying':
+        # Stochastic Noise
+        starting_std = 0.9  # Replace with your desired starting value
+        ending_std = 0.005  # Replace with your desired ending value
+        std_std = 0.5       # standard deviation of the standard deviation of the noise
+
+        std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
+        print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit):.4f}, Q5: {np.quantile(pfit, 0.05):.4f}, Q95: {np.quantile(pfit, 0.95):.4f}')
+
         pop_new = mutate_stochastic_decaying(pop_new, std=std, mutation_rate=mutation_rate)
 
     # Clip to domain
@@ -397,15 +397,15 @@ def run_test(config, randomini_test="no", multi_ini_test=False):
 if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
-        "enemies":              [3],                # [1, 2, 3, 4, 5, 6, 7, 8]
+        "enemies":              [1],                # [1, 2, 3, 4, 5, 6, 7, 8]
         "randomini":            "no",               # "yes", "no"
         "multi_ini":            False,               # True, False
         "normalization_method": "default",  # "default", "domain_specific", "around_0"
-        "fitness_method":       "balanced",         # "default", "balanced"
-        "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
+        "fitness_method":       "default",         # "default", "balanced"
+        "pick_parent_method":   "tournament", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial"
-        "crossover_method":     "default",     # "none", "default"
-        "mutation_type":        "normal",      # "stochastic_decaying", "normal"
+        "crossover_method":     "none",     # "none", "default"
+        "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
         "gens":                 30,
         "n_hidden_neurons":     10,
         "pop_size":             100,
