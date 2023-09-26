@@ -1,16 +1,16 @@
 
-enemies 6 7 8
+enemies 1
 timeexpire 3000
 level 2
-enemyn 8
+enemyn 1
 overturetime 100
 playermode ai
 enemymode static
 contacthurt player
 clockprec low
 inputscoded no
-randomini no
-multiplemode yes
+randomini yes
+multiplemode no
 speed fastest
 loadplayer yes
 loadenemy yes

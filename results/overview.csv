@@ -8,4 +8,4 @@ experiment_name,best_score,folder
 [7]_10_inp-norm-domain_specific_f-balanced,92.47168626269772,1694389525360_[7]_10_inp-norm-domain_specific_f-balanced
 [8]_10_inp-norm-domain_specific_f-balanced,89.88188000615581,1694389578795_[8]_10_inp-norm-domain_specific_f-balanced
 "[7, 8]_10_inp-norm-domain_specific_f-balanced",90.79605369405458,"1694389642659_[7, 8]_10_inp-norm-domain_specific_f-balanced"
-A_3[1]_10_inp-norm-domain_specific_f-balanced,93.35066893593267,1695652090601_A_3[1]_10_inp-norm-domain_specific_f-balanced
+A_3[1]_10_inp-norm-domain_specific_f-balanced,95.0106488627213,1695652090601_A_3[1]_10_inp-norm-domain_specific_f-balanced
