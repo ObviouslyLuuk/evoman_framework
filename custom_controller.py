@@ -78,13 +78,19 @@ def normalize_inputs(inputs, method):
 
 # implements controller structure for player
 class player_controller(Controller):
-	def __init__(self, _n_hidden, normalization_method="default", x_dist=None, env=None):
+	def __init__(self, _n_hidden, normalization_method="default", x_dist=None, env=None, crossover_method=None):
 		self.n_hidden = [_n_hidden]
 		self.normalization_method = normalization_method
 		self.x_dist = x_dist
 		self.env = env
+		self.crossover_method = crossover_method
 
 	def set(self,controller, n_inputs):
+		if self.crossover_method == "ensemble":
+			# Shape of controller in this case is (2, nvars), instead of (nvars,)
+			# Create ensemble by taking the mean of the two controllers
+			controller = np.mean(controller, axis=0)
+
 		# Number of hidden neurons
 
 		if self.n_hidden[0] > 0:

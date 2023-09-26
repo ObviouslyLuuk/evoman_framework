@@ -124,7 +124,8 @@ def load_population(domain_lower,
                     eval_fn,
                     fitness_method,
                     use_folder,
-                    continue_evo):
+                    continue_evo,
+                    crossover_method=None):
     """Load population from file if it exists. Otherwise initialize new population.
     experiment_name is the name of the experiment."""
     if continue_evo:
@@ -136,7 +137,10 @@ def load_population(domain_lower,
     else:
         print('Initializing new population...')
         # Initialize population
-        pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
+        if crossover_method == "ensemble":
+            pop = np.random.uniform(domain_lower, domain_upper, (pop_size, 2, n_vars))
+        else:
+            pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
         # Eval
         pfit_log, pfit = eval_fn(env, pop, fitness_method)
         env.update_solutions([pop, pfit])

@@ -141,7 +141,8 @@ def crossover(parents, crossover_method):
     """Perform crossover on parents, return children.
     parents is a numpy array of parents, where each parent is a numpy array of weights and biases.
     crossover_method default takes parents two by two and weighs the child's genes by a random factor between 0 and 1.
-    Two children are produced per pair of parents."""
+    Two children are produced per pair of parents.
+    crossover_method ensemble takes parents two by two and randomly picks one of the two networks per parent."""
     if crossover_method == 'default':
         children = np.zeros((len(parents), parents.shape[1]))
         for i in range(0, len(parents), 2):
@@ -154,7 +155,17 @@ def crossover(parents, crossover_method):
         return children
     elif crossover_method == 'none':
         return parents.copy()
-
+    elif crossover_method == 'ensemble':
+        children = np.zeros((len(parents), *parents.shape[1:]))
+        for i in range(0, len(parents), 2):
+            p1 = parents[i]
+            p2 = parents[i+1]
+            for j in range(2):
+                # Child's network 0 is one of parent 1's networks
+                children[i+j][0] = p1[np.random.randint(2)]
+                # Child's network 1 is one of parent 2's networks
+                children[i+j][1] = p2[np.random.randint(2)]
+        return children
 
 def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, randomini="no", multi_ini=False, enemies=None):
     """Perform one step of evolution.
@@ -175,9 +186,9 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
     
     # Add random individuals
     add_amount = int(len(pop) / 10)
-    pop_new[-add_amount:] = np.random.uniform(dom_lower, dom_upper, size=(add_amount, pop.shape[1]))
+    pop_new[-add_amount:] = np.random.uniform(dom_lower, dom_upper, size=(add_amount, *pop.shape[1:]))
     
-    parents = np.zeros((len(pop)-add_amount, pop.shape[1]))
+    parents = np.zeros((len(pop)-add_amount, *pop.shape[1:]))
     if pick_parent_method == "greedy":
         # Pick 10 best parents
         best_parents = np.argsort(pfit_norm)[::-1][:10]
@@ -292,7 +303,7 @@ def main(
                     multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons, normalization_method), # you  can insert your own controller here
+                    player_controller=player_controller(n_hidden_neurons, normalization_method, crossover_method=crossover_method), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="fastest",
@@ -307,7 +318,7 @@ def main(
         n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
-    pop, pfit, log_pfit, best_idx, mean, std = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0)
+    pop, pfit, log_pfit, best_idx, mean, std = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0, crossover_method=crossover_method)
 
     # For each generation
     for gen in range(start_gen, gens):
@@ -333,7 +344,10 @@ def main(
         save_results(use_folder, results_dict, kwarg_dict)
     
         # Save best individual
-        np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
+        if crossover_method == "ensemble":
+            np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', np.mean(pop[best_idx], axis=0))
+        else:
+            np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
         
         # Save environment
         env.update_solutions([pop, pfit])
@@ -407,8 +421,8 @@ if __name__ == '__main__':
         "fitness_method":       "default",         # "default", "balanced"
         "pick_parent_method":   "tournament", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial"
-        "crossover_method":     "none",     # "none", "default"
-        "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
+        "crossover_method":     "ensemble",     # "none", "default", "ensemble"
+        "mutation_type":        "normal",      # "stochastic_decaying", "normal"
         "gens":                 30,
         "n_hidden_neurons":     10,
         "pop_size":             100,
