@@ -1,4 +1,4 @@
-# Environment including Python, pip, numpy, tqdm, pygame, pandas
+# Environment including Python, pip, numpy, tqdm, pygame, pandas, and scipy
 name: EVOMAN
 channels:
   - defaults
@@ -7,6 +7,7 @@ dependencies:
   - pip=23.2.1
   - numpy
   - pip:
+    - tqdm
     - pygame
     - pandas
-    - tqdm
+    - scipy
