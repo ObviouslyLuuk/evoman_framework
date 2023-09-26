@@ -17,6 +17,8 @@ from helpers import save_results, load_population, find_folder, find_folders, RE
 
 # imports other libs
 import numpy as np
+from numpy import sqrt, exp
+from scipy.stats import rankdata
 import os
 
 def fitness_balanced(player_life, enemy_life, time):
@@ -58,6 +60,15 @@ def evaluate(env, x, fitness_method, multi_ini=False, enemies=None):
     log_f = np.array([f for f, use_f in both_f])
     use_f = np.array([use_f for f, use_f in both_f])
     return log_f, use_f
+
+def calculate_percentile_ranks_prob(array):
+    # Get the ranks of elements
+    ranks = rankdata(array)
+    # Calculate the total number of elements
+    N = len(array)
+    # Convert ranks to percentile ranks
+    percentile_ranks = (ranks - 1) / (N - 1)
+    return percentile_ranks / np.sum(percentile_ranks)
 
 def normalize_pop_fitness(pfit):
     """Normalize fitnesses to values between 0 and 1.
@@ -102,6 +113,16 @@ def mutate(child, mutation_rate):
     child[mask] += np.random.normal(0, 0.1, size=child.shape)[mask]
     
     return child
+
+def mutate_stochastic_decaying(child, std, mutation_rate):
+    """ Add random stochastic noise based on the fitness of the individual
+    pfit must be in the range [-50, 50] 
+    """
+    # Create mask of random booleans
+    mask = np.random.rand(*child.shape) < mutation_rate
+    # Add random noise to weights and biases where mask is True
+    child[mask] += np.random.normal(0, std, size=child.shape)[mask]
+    return child
     
 
 def select_survivors(pfit, survivor_method):
@@ -135,7 +156,7 @@ def crossover(parents, crossover_method):
         return parents.copy()
 
 
-def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, multi_ini=False, enemies=None):
+def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, randomini="no", multi_ini=False, enemies=None):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -171,19 +192,44 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick
     # Crossover
     pop_new[:-add_amount] = crossover(parents, crossover_method)
 
-    # Mutate
-    pop_new = mutate(pop_new, mutation_rate)
+    # Mutate    
+    # Stochastic Noise
+    starting_std = 0.9  # Replace with your desired starting value
+    ending_std = 0.005  # Replace with your desired ending value
+    std_std = 0.5       # standard deviation of the standard deviation of the noise
+
+    std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
+    print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit):.4f}, Q5: {np.quantile(pfit, 0.05):.4f}, Q95: {np.quantile(pfit, 0.95):.4f}')
+    
+    if mutation_type == 'normal':
+        pop_new = mutate(pop_new, mutation_rate)
+    elif mutation_type == 'stochastic_decaying':
+        pop_new = mutate_stochastic_decaying(pop_new, std=std, mutation_rate=mutation_rate)
 
     # Clip to domain
     pop_new = np.clip(pop_new, -1, 1)
 
     # Evaluate new population
-    log_pfit_new, pfit_new = evaluate(env, pop_new, fitness_method=fitness_method, multi_ini=multi_ini, enemies=enemies)
-    
-    # Combine old and new population
-    pop_combined = np.vstack((pop, pop_new))
-    pfit_combined = np.append(pfit, pfit_new)
-    log_pfit_combined = np.append(log_pfit, log_pfit_new)
+    if randomini == "no":
+        log_pfit_new, pfit_new = evaluate(env, pop_new, fitness_method=fitness_method, multi_ini=multi_ini, enemies=enemies)
+        
+        # Combine old and new population
+        pop_combined = np.vstack((pop, pop_new))
+        pfit_combined = np.append(pfit, pfit_new)
+        log_pfit_combined = np.append(log_pfit, log_pfit_new)
+    else:
+        # Combine old and new population
+        pop_combined = np.vstack((pop, pop_new))
+
+        # Run evaluation on new population n times and take avg
+        n_times = 10
+
+        pfit_combined = np.zeros((n_times, len(pop_combined)))
+        log_pfit_combined = np.zeros((n_times, len(pop_combined)))
+        for i in range(n_times):
+            log_pfit_combined[i], pfit_combined[i] = evaluate(env, pop_combined, fitness_method=fitness_method, multi_ini=False)
+        pfit_combined = np.mean(pfit_combined, axis=0)
+        log_pfit_combined = np.mean(log_pfit_combined, axis=0)
 
     # Select survivors
     idx = select_survivors(pfit_combined, survivor_method)
@@ -196,7 +242,7 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method, pick
 
 
 def main(
-        experiment_name = 'optimization_test',
+        experiment_name = 'a1',
         enemies = [2],
         n_hidden_neurons = 10,
         domain_upper = 1,
@@ -212,6 +258,8 @@ def main(
         headless = True,
         multi_ini = True,
         crossover_method = "none",
+        # Alexanders Changes
+        mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
 ):
     kwarg_dict = locals()
 
@@ -264,9 +312,9 @@ def main(
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
-        pop, pfit, log_pfit = evolution_step(env, pop, pfit, log_pfit, mutation_rate, fitness_method=fitness_method, 
+        pop, pfit, log_pfit = evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
                                    pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
-                                   multi_ini=multi_ini, enemies=actual_enemies)
+                                   randomini=randomini, multi_ini=multi_ini, enemies=actual_enemies)
         
         # Get stats
         best_idx    = np.argmax(pfit)
@@ -357,6 +405,7 @@ if __name__ == '__main__':
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial"
         "crossover_method":     "default",     # "none", "default"
+        "mutation_type":        "normal",      # "stochastic_decaying", "normal"
         "gens":                 30,
         "n_hidden_neurons":     10,
         "pop_size":             100,

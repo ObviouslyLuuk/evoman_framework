@@ -40,6 +40,7 @@ for en in range(1, 9):
 
 	# Load specialist controller
 	sol = np.loadtxt('solutions_demo/demo_'+str(en)+'.txt')
+	print(sol.shape)
 	print('\n LOADING SAVED SPECIALIST SOLUTION FOR ENEMY '+str(en)+' \n')
 	f,p,e,t = env.play(sol)
 	win_condition = e <= 0

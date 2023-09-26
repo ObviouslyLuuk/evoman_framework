@@ -133,7 +133,6 @@ class Environment(object):
 
     def load_sprites(self):
 
-        # loads enemy and map
         if not self.enemyn in self.enemyImports:
             self.enemyImports[self.enemyn] = __import__('evoman.enemy'+str(self.enemyn), fromlist=['enemy'+str(self.enemyn)])
         enemy = self.enemyImports[self.enemyn]
@@ -393,9 +392,19 @@ class Environment(object):
 
 
 
-            # default fitness function for single solutions
+    # default fitness function for single solutions
     def fitness_single(self):
-        return 0.9*(100 - self.get_enemylife()) + 0.1*self.get_playerlife() - numpy.log(self.get_time())
+        ReducedL_p = 100 - self.get_playerlife()
+        ReducedL_p = ReducedL_p if ReducedL_p > 0 else 1000
+        ReducedL_e = 100 - self.get_enemylife() 
+        ReducedL_e = ReducedL_e if ReducedL_e > 0 else 1000
+
+        f = ReducedL_e - ReducedL_p 
+        f = f + ((+1) if f < 0 else (-1)) * numpy.log(self.get_time())
+        
+        # original
+        f = 0.9*(100 - self.get_enemylife()) + 0.1*self.get_playerlife() - numpy.log(self.get_time())
+        return f
 
     # default fitness function for consolidating solutions among multiple games
     def cons_multi(self,values):
