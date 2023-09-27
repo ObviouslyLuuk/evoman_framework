@@ -1,5 +1,6 @@
 from optimization_dummy import main, run_test
 import time
+import json
 import argparse
 from helpers import RESULTS_DIR, find_folders, compare_configs
 
@@ -9,17 +10,19 @@ if __name__ == '__main__':
     parser.add_argument('--randomini',              type=str, default='no',         help='usage: --randomini yes/no')
     parser.add_argument('--multi_ini',              type=bool, default=False,       help='usage: --multi_ini True/False')
     parser.add_argument('--normalization_method',   type=str, default='default',    help='usage: --normalization_method default/domain_specific/around_0')
-    parser.add_argument('--fitness_method',         type=str, default='default',    help='usage: --fitness_method default/balanced')
+    parser.add_argument('--fitness_method',         type=str, default='default',    help='usage: --fitness_method default/balanced/rank')
     parser.add_argument('--pick_parent_method',     type=str, default='tournament', help='usage: --pick_parent_method multinomial/tournament/greedy')
-    parser.add_argument('--survivor_method',        type=str, default='multinomial', help='usage: --survivor_method greedy/multinomial')
+    parser.add_argument('--survivor_method',        type=str, default='multinomial', help='usage: --survivor_method greedy/multinomial/tournament')
     parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default/ensemble')
     parser.add_argument('--mutation_type',          type=str, default='normal',     help='usage: --mutation_type normal/stochastic_decaying')
+    parser.add_argument('--enemy_sets',             type=str, default='1,2,3,4,5,6,7,8',   help='usage: --enemy_sets 1,2,3,4,5,6,7,8/12,13/1')
 
     args = parser.parse_args()
 
-    enemy_sets = [[1], [2], [3], [4], [5], [6], [7], [8]]
+    # Get sets like [[1], [2], [3], [4], [5], [6], [7], [8]] or [[1, 2], [1, 3]] or [[1]] from string
+    args.enemy_sets = [[int(e) for e in eset] for eset in args.enemy_sets.split(',')]
 
-    RUN_EVOLUTION = False
+    RUN_EVOLUTION = True
     RANDOMINI_TEST = "no"
     MULTI_INI_TEST = False
 
@@ -30,7 +33,7 @@ if __name__ == '__main__':
     for i in range(runs_per_experiment):
         print(f'\n\nRun {i+1} of {runs_per_experiment}\n\n')
         # Run evolution for each set of enemies
-        for enemies in enemy_sets:
+        for enemies in args.enemy_sets:
             config = {
                 # "experiment_name":      'optimization_test',
                 "enemies":              enemies,            # [1, 2, 3, 4, 5, 6, 7, 8]

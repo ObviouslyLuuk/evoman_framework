@@ -25,6 +25,10 @@ def fitness_balanced(player_life, enemy_life, time):
     """Returns a balanced fitness, based on the player life, enemy life and time"""
     return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
 
+def fitness_defensive(player_life, enemy_life, time):
+    """Returns a balanced fitness, based on the player life, enemy life and time"""
+    return .1*(100-enemy_life) + .9*player_life - np.log(time+1)
+
 def simulation(env, x, fitness_method, multi_ini=False, enemies=None):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     if not multi_ini:
@@ -32,6 +36,8 @@ def simulation(env, x, fitness_method, multi_ini=False, enemies=None):
         use_f = f
         if fitness_method == 'balanced':
             use_f = fitness_balanced(p, e, t)
+        elif fitness_method == 'defensive':
+            use_f = fitness_defensive(p, e, t)
     else:
         fitnesses = np.zeros(len(enemies))
         use_fitnesses = np.zeros(len(enemies))
@@ -81,20 +87,26 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
+def tournament_selection(pop, pfit):
+    """Return the index of an individual from the population, based on a tournament.
+    pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
+    pfit is a numpy array of fitnesses."""
+    # Pick 2 random individuals
+    p1 = np.random.randint(0, len(pfit))
+    p2 = np.random.randint(0, len(pfit))
+
+    # Return the best of the two
+    if pfit[p1] > pfit[p2]:
+        return p1
+    else:
+        return p2
+
 def pick_parent(pop, pfit, method):
     """Return a parent from the population, based on a tournament, or multinomial sampling.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
     if method == 'tournament':
-        # Pick 2 random parents
-        p1 = np.random.randint(0, len(pop))
-        p2 = np.random.randint(0, len(pop))
-        
-        # Return the best of the two
-        if pfit[p1] > pfit[p2]:
-            return pop[p1]
-        else:
-            return pop[p2]
+        return pop[tournament_selection(pop, pfit)].copy()
     elif method == 'multinomial':
         pfit = normalize_pop_fitness(pfit)
         pfit = pfit**2 # Square fitnesses to increase probability of picking best
@@ -135,6 +147,10 @@ def select_survivors(pfit, survivor_method):
         probs = pfit_norm / np.sum(pfit_norm)
         idx = np.random.choice(len(pfit), size=int(len(pfit)/2), p=probs, replace=False)
         idx[0] = np.argmax(pfit) # Keep best
+    elif survivor_method == 'tournament':
+        idx = np.zeros(int(len(pfit)/2), dtype=int)
+        for i in range(len(idx)):
+            idx[i] = tournament_selection(pfit, pfit)
     return idx
 
 def crossover(parents, crossover_method):
@@ -175,6 +191,8 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
     mutation_rate is the mutation rate."""
     # Normalize fitnesses
     pfit_norm = normalize_pop_fitness(pfit)
+    if fitness_method == "rank":
+        pfit_norm = calculate_percentile_ranks_prob(pfit_norm)
 
     # Print amount of duplicates
     duplicates = len(pfit) - len(np.unique(pfit))
@@ -242,8 +260,12 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
         pfit_combined = np.mean(pfit_combined, axis=0)
         log_pfit_combined = np.mean(log_pfit_combined, axis=0)
 
+    use_pfit_combined = pfit_combined
+    if fitness_method == "rank":
+        use_pfit_combined = calculate_percentile_ranks_prob(pfit_combined)
+
     # Select survivors
-    idx = select_survivors(pfit_combined, survivor_method)
+    idx = select_survivors(use_pfit_combined, survivor_method)
     pop_new = pop_combined[idx]
     pfit_new = pfit_combined[idx]
     log_pfit_new = log_pfit_combined[idx]
@@ -414,15 +436,15 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
 if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
-        "enemies":              [1],                # [1, 2, 3, 4, 5, 6, 7, 8]
+        "enemies":              [6],                # [1, 2, 3, 4, 5, 6, 7, 8]
         "randomini":            "no",               # "yes", "no"
         "multi_ini":            False,               # True, False
         "normalization_method": "default",  # "default", "domain_specific", "around_0"
-        "fitness_method":       "default",         # "default", "balanced"
-        "pick_parent_method":   "tournament", # "tournament", "multinomial", "greedy"
-        "survivor_method":      "multinomial", # "greedy", "multinomial"
-        "crossover_method":     "ensemble",     # "none", "default", "ensemble"
-        "mutation_type":        "normal",      # "stochastic_decaying", "normal"
+        "fitness_method":       "rank",         # "default", "balanced", "defensive", "rank"
+        "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
+        "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
+        "crossover_method":     "none",     # "none", "default", "ensemble"
+        "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
         "gens":                 30,
         "n_hidden_neurons":     10,
         "pop_size":             100,
@@ -430,7 +452,7 @@ if __name__ == '__main__':
 
     config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
 
-    RUN_EVOLUTION = True
+    RUN_EVOLUTION = False
     RANDOMINI_TEST = "yes"
 
     # Track time
