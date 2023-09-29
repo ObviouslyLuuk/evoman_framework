@@ -26,7 +26,8 @@ if __name__ == '__main__':
     RANDOMINI_TEST = "no"
     MULTI_INI_TEST = False
 
-    runs_per_experiment = 10
+    # runs_per_experiment = 10
+    runs_per_experiment = 1 # 10 is done with the cluster script for parallelization
     if not RUN_EVOLUTION:
         runs_per_experiment = 1
 

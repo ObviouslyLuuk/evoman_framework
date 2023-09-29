@@ -25,47 +25,48 @@ def fitness_balanced(player_life, enemy_life, time):
     """Returns a balanced fitness, based on the player life, enemy life and time"""
     return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
 
-def fitness_defensive(player_life, enemy_life, time):
-    """Returns a balanced fitness, based on the player life, enemy life and time"""
-    return .1*(100-enemy_life) + .9*player_life - np.log(time+1)
-
-def simulation(env, x, fitness_method, multi_ini=False, enemies=None):
+def simulation(env, x, multi_ini=False, enemies=None):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
     if not multi_ini:
         f,p,e,t = env.play(pcont=x)
-        use_f = f
-        if fitness_method == 'balanced':
-            use_f = fitness_balanced(p, e, t)
-        elif fitness_method == 'defensive':
-            use_f = fitness_defensive(p, e, t)
+        f = {
+            "default": f,
+            "balanced": fitness_balanced(p, e, t),
+        }
     else:
-        fitnesses = np.zeros(len(enemies))
-        use_fitnesses = np.zeros(len(enemies))
+        fitnesses = {
+            "default": np.zeros(len(enemies)),
+            "balanced": np.zeros(len(enemies)),
+        }
         for i, enemy in enumerate(enemies):
             env.enemies = [enemy]
             positions = ENEMY_POSITIONS[enemy]
-            fitnesses_ = np.zeros(len(positions))
-            use_fitnesses_ = np.zeros(len(positions))
+            fitnesses_ = {
+                "default": np.zeros(len(positions)),
+                "balanced": np.zeros(len(positions)),
+            }
             for j, position in enumerate(positions):
                 env.player_controller.x_dist = position
                 f,p,e,t = env.play(pcont=x)
-                fitnesses_[j] = f
-                use_fitnesses_[j] = f
-                if fitness_method == 'balanced':
-                    use_fitnesses_[j] = fitness_balanced(p, e, t)
-            fitnesses[i] = np.mean(fitnesses_)
-            use_fitnesses[i] = np.mean(use_fitnesses_)
-        f = np.mean(fitnesses) - np.std(fitnesses)
-        use_f = np.mean(use_fitnesses) - np.std(use_fitnesses)
-    return f, use_f
+                fitnesses_["default"][j] = f
+                fitnesses_["balanced"][j] = fitness_balanced(p, e, t)
+            fitnesses["default"][i] = np.mean(fitnesses_["default"])
+            fitnesses["balanced"][i] = np.mean(fitnesses_["balanced"])
+        f = {
+            "default": np.mean(fitnesses["default"]) - np.std(fitnesses["default"]),
+            "balanced": np.mean(fitnesses["balanced"]) - np.std(fitnesses["balanced"]),
+        }
+    return f
 
-def evaluate(env, x, fitness_method, multi_ini=False, enemies=None):
+def evaluate(env, x, multi_ini=False, enemies=None):
     """Returns tuple of two arrays of fitnesses for population x, the first is the default f, the other is the one used.
     x is a numpy array of individuals"""
-    both_f = [simulation(env, individual, fitness_method, multi_ini=multi_ini, enemies=enemies) for individual in x]
-    log_f = np.array([f for f, use_f in both_f])
-    use_f = np.array([use_f for f, use_f in both_f])
-    return log_f, use_f
+    both_f = [simulation(env, individual, multi_ini=multi_ini, enemies=enemies) for individual in x]
+    f = {
+        "default": np.array([f["default"] for f in both_f]),
+        "balanced": np.array([f["balanced"] for f in both_f]),
+    }
+    return f
 
 def calculate_percentile_ranks_prob(array):
     # Get the ranks of elements
@@ -87,9 +88,8 @@ def normalize_pop_fitness(pfit):
     # Normalize
     return (pfit - np.min(pfit)) / (np.max(pfit) - np.min(pfit))
 
-def tournament_selection(pop, pfit):
+def tournament_selection(pfit):
     """Return the index of an individual from the population, based on a tournament.
-    pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
     # Pick 2 random individuals
     p1 = np.random.randint(0, len(pfit))
@@ -106,7 +106,7 @@ def pick_parent(pop, pfit, method):
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses."""
     if method == 'tournament':
-        return pop[tournament_selection(pop, pfit)].copy()
+        return pop[tournament_selection(pfit)].copy()
     elif method == 'multinomial':
         pfit = normalize_pop_fitness(pfit)
         pfit = pfit**2 # Square fitnesses to increase probability of picking best
@@ -150,7 +150,7 @@ def select_survivors(pfit, survivor_method):
     elif survivor_method == 'tournament':
         idx = np.zeros(int(len(pfit)/2), dtype=int)
         for i in range(len(idx)):
-            idx[i] = tournament_selection(pfit, pfit)
+            idx[i] = tournament_selection(pfit)
     return idx
 
 def crossover(parents, crossover_method):
@@ -183,19 +183,19 @@ def crossover(parents, crossover_method):
                 children[i+j][1] = p2[np.random.randint(2)]
         return children
 
-def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, randomini="no", multi_ini=False, enemies=None):
+def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, randomini="no", multi_ini=False, enemies=None):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
     pfit is a numpy array of fitnesses.
     mutation_rate is the mutation rate."""
     # Normalize fitnesses
-    pfit_norm = normalize_pop_fitness(pfit)
+    pfit_norm = normalize_pop_fitness(pfit[fitness_method])
     if fitness_method == "rank":
         pfit_norm = calculate_percentile_ranks_prob(pfit_norm)
 
     # Print amount of duplicates
-    duplicates = len(pfit) - len(np.unique(pfit))
+    duplicates = len(pfit) - len(np.unique(pfit[fitness_method]))
     print(f'Amount of duplicate fitnesses: {duplicates}')
     # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
     
@@ -231,7 +231,7 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
         std_std = 0.5       # standard deviation of the standard deviation of the noise
 
         std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
-        print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit):.4f}, Q5: {np.quantile(pfit, 0.05):.4f}, Q95: {np.quantile(pfit, 0.95):.4f}')
+        print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit[fitness_method]):.4f}, Q5: {np.quantile(pfit[fitness_method], 0.05):.4f}, Q95: {np.quantile(pfit[fitness_method], 0.95):.4f}')
 
         pop_new = mutate_stochastic_decaying(pop_new, std=std, mutation_rate=mutation_rate)
 
@@ -240,12 +240,14 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
 
     # Evaluate new population
     if randomini == "no":
-        log_pfit_new, pfit_new = evaluate(env, pop_new, fitness_method=fitness_method, multi_ini=multi_ini, enemies=enemies)
+        pfit_new = evaluate(env, pop_new, multi_ini=multi_ini, enemies=enemies)
         
         # Combine old and new population
         pop_combined = np.vstack((pop, pop_new))
-        pfit_combined = np.append(pfit, pfit_new)
-        log_pfit_combined = np.append(log_pfit, log_pfit_new)
+        pfit_combined = {
+            "default": np.append(pfit, pfit_new["default"]),
+            "balanced": np.append(pfit, pfit_new["balanced"]),
+        }
     else:
         # Combine old and new population
         pop_combined = np.vstack((pop, pop_new))
@@ -253,25 +255,33 @@ def evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type, fitne
         # Run evaluation on new population n times and take avg
         n_times = 10
 
-        pfit_combined = np.zeros((n_times, len(pop_combined)))
-        log_pfit_combined = np.zeros((n_times, len(pop_combined)))
+        pfit_combined = {
+            "default": np.zeros((n_times, len(pop_combined))),
+            "balanced": np.zeros((n_times, len(pop_combined))),
+        }
         for i in range(n_times):
-            log_pfit_combined[i], pfit_combined[i] = evaluate(env, pop_combined, fitness_method=fitness_method, multi_ini=False)
-        pfit_combined = np.mean(pfit_combined, axis=0)
-        log_pfit_combined = np.mean(log_pfit_combined, axis=0)
+            pfit_i = evaluate(env, pop_combined, fitness_method=fitness_method, multi_ini=False)
+            pfit_combined["default"][i] = pfit_i["default"]
+            pfit_combined["balanced"][i] = pfit_i["balanced"]
+        pfit_combined = {
+            "default": np.mean(pfit_combined["default"], axis=0),
+            "balanced": np.mean(pfit_combined["balanced"], axis=0),
+        }
 
-    use_pfit_combined = pfit_combined
+    selection_pfit_combined = pfit_combined[fitness_method]
     if fitness_method == "rank":
-        use_pfit_combined = calculate_percentile_ranks_prob(pfit_combined)
+        selection_pfit_combined = calculate_percentile_ranks_prob(selection_pfit_combined)
 
     # Select survivors
-    idx = select_survivors(use_pfit_combined, survivor_method)
+    idx = select_survivors(selection_pfit_combined, survivor_method)
     pop_new = pop_combined[idx]
-    pfit_new = pfit_combined[idx]
-    log_pfit_new = log_pfit_combined[idx]
+    pfit_new = {
+        "default": pfit_combined["default"][idx],
+        "balanced": pfit_combined["balanced"][idx],
+    }
     
     # Return new population and fitnesses
-    return pop_new, pfit_new, log_pfit_new
+    return pop_new, pfit_new
 
 
 def main(
@@ -291,7 +301,6 @@ def main(
         headless = True,
         multi_ini = True,
         crossover_method = "none",
-        # Alexanders Changes
         mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
 ):
     kwarg_dict = locals()
@@ -340,12 +349,12 @@ def main(
         n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
-    pop, pfit, log_pfit, best_idx, mean, std = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0, crossover_method=crossover_method)
+    pop, pfit = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0, crossover_method=crossover_method)
 
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
-        pop, pfit, log_pfit = evolution_step(env, pop, pfit, log_pfit, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
+        pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
                                    pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
                                    randomini=randomini, multi_ini=multi_ini, enemies=actual_enemies)
         
@@ -354,13 +363,13 @@ def main(
 
         results_dict = {
             'gen': gen,
-            'best': pfit[best_idx],
-            'mean': np.mean(pfit),
-            'std': np.std(pfit),
-            'best_log': log_pfit[best_idx],
-            'mean_log': np.mean(log_pfit),
-            'std_log': np.std(log_pfit),
         }
+        for key in pfit:
+            results_dict[f'best_{key}'] = pfit[key][best_idx]
+            results_dict[f'mean_{key}'] = np.mean(pfit[key])
+            results_dict[f'std_{key}'] = np.std(pfit[key])
+            results_dict[f'Q5_{key}'] = np.quantile(pfit[key], 0.05)
+            results_dict[f'Q95_{key}'] = np.quantile(pfit[key], 0.95)
         
         # Save results
         save_results(use_folder, results_dict, kwarg_dict)
@@ -440,7 +449,7 @@ if __name__ == '__main__':
         "randomini":            "no",               # "yes", "no"
         "multi_ini":            False,               # True, False
         "normalization_method": "default",  # "default", "domain_specific", "around_0"
-        "fitness_method":       "rank",         # "default", "balanced", "defensive", "rank"
+        "fitness_method":       "rank",         # "default", "balanced", "rank"
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
         "crossover_method":     "none",     # "none", "default", "ensemble"

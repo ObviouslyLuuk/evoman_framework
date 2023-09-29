@@ -32,8 +32,10 @@ ENEMY_POSITIONS = {n: sorted(list(set([ENEMY_DEFAULT_POSITIONS[n]] + ENEMY_RANDO
 
 def save_results(use_folder, results_dict, kwarg_dict={}):
     """Save results to csv and print them."""
-    print(f'\n GENERATION {results_dict["gen"]                   } best: {round(results_dict["best"],6)} mean: {round(results_dict["mean"],6)} std: {round(results_dict["std"],6)}')
-    print(  f'  default f: {" "*(len(str(results_dict["gen"]))-1)} best: {round(results_dict["best_log"],6)} mean: {round(results_dict["mean_log"],6)} std: {round(results_dict["std_log"],6)}')
+    fitness_method = kwarg_dict['fitness_method']
+    print(f'\n GENERATION {results_dict["gen"]}  (using {fitness_method} fitness)')
+    for fitness_method in ['default', 'balanced']:
+        print(f'  {fitness_method} fitness:  best: {round(results_dict[f"best_{fitness_method}"],6)} mean: {round(results_dict[f"mean_{fitness_method}"],6)} std: {round(results_dict[f"std_{fitness_method}"],6)} Q5: {round(results_dict[f"Q5_{fitness_method}"],6)} Q95: {round(results_dict[f"Q95_{fitness_method}"],6)}')
 
     # Save results using pandas
     # Load csv if it exists
@@ -105,7 +107,7 @@ def get_best(config, based_on_eval_best=None):
         if based_on_eval_best is None:
             with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
                 config = json.load(f)
-            best_fitness = config['best_log']
+            best_fitness = config['best_balanced']
             fitness_by_folder[folder] = best_fitness
         else:
             with open(f'{RESULTS_DIR}/{folder}/eval_best{based_on_eval_best}.json', 'r') as f:
@@ -142,20 +144,18 @@ def load_population(domain_lower,
         else:
             pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
         # Eval
-        pfit_log, pfit = eval_fn(env, pop, fitness_method)
-        env.update_solutions([pop, pfit])
-
-    best_idx = np.argmax(pfit)
-    mean = np.mean(pfit)
-    std = np.std(pfit)
-    return pop, pfit, pfit_log, best_idx, mean, std
+        pfit = eval_fn(env, pop)
+        env.update_solutions([pop, pfit[fitness_method]])
+    return pop, pfit
 
 
 
 def compare_config(config1, config2):
     """Return True if the two configs are the same, False otherwise. Ignores gen, best, mean and std. 
     Only keys in the first config are checked."""
-    ignore = ['gens', 'gen', 'best', 'mean', 'std', 'headless']
+    ignore = ['gens', 'headless']
+    for fitness_method in ['default', 'balanced']:
+        ignore.extend([f'best_{fitness_method}', f'mean_{fitness_method}', f'std_{fitness_method}', f'Q5_{fitness_method}', f'Q95_{fitness_method}'])
     for key in config1:
         if key in ignore:
             continue
