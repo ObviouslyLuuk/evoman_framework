@@ -194,3 +194,7 @@ def compare_configs(folders, config=None, results_dir=RESULTS_DIR, printing=Fals
         selected_folders.append(folder)
     return selected_folders
 
+
+def get_random_str():
+    characters = [chr(i) for i in range(97, 123)] + [str(i) for i in range(10)] + [chr(i) for i in range(65, 91)]
+    return "".join(np.random.choice(characters, 8))

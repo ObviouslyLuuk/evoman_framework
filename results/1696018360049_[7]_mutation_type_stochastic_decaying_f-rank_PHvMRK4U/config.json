@@ -1,0 +1,33 @@
+{
+    "experiment_name": "[7]_mutation_type_stochastic_decaying_f-rank",
+    "enemies": [
+        7
+    ],
+    "n_hidden_neurons": 10,
+    "domain_upper": 1,
+    "domain_lower": -1,
+    "pop_size": 100,
+    "gens": 30,
+    "mutation_rate": 0.2,
+    "normalization_method": "default",
+    "fitness_method": "rank",
+    "pick_parent_method": "multinomial",
+    "survivor_method": "multinomial",
+    "randomini": "no",
+    "headless": true,
+    "multi_ini": false,
+    "crossover_method": "none",
+    "mutation_type": "stochastic_decaying",
+    "start_new": true,
+    "gen": 29,
+    "best_default": 92.04087650688851,
+    "mean_default": 85.37183489064746,
+    "std_default": 12.40943639394361,
+    "Q5_default": 66.74147366361208,
+    "Q95_default": 90.91960301140016,
+    "best_balanced": 79.3125082572181,
+    "mean_balanced": 63.35825334916262,
+    "std_balanced": 14.292052134290072,
+    "Q5_balanced": 34.736284134103464,
+    "Q95_balanced": 74.36449777305549
+}

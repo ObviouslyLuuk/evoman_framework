@@ -100,7 +100,7 @@ if __name__ == "__main__":
                 if randomini_test == "yes" and multi_ini_test:
                     continue
                 add_str = ""
-                use_n = 1
+                use_n = test_n
                 if randomini_test == "yes":
                     add_str = "_randomini"
                     use_n = test_n

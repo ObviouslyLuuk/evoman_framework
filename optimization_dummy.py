@@ -13,7 +13,7 @@ import json
 
 from evoman.environment import Environment
 from custom_controller import player_controller
-from helpers import save_results, load_population, find_folder, find_folders, RESULTS_DIR, get_best, ENEMY_POSITIONS
+from helpers import save_results, load_population, find_folder, find_folders, RESULTS_DIR, get_best, ENEMY_POSITIONS, get_random_str
 
 # imports other libs
 import numpy as np
@@ -304,6 +304,7 @@ def main(
         multi_ini = True,
         crossover_method = "none",
         mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
+        start_new = False,
 ):
     kwarg_dict = locals()
 
@@ -317,11 +318,20 @@ def main(
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     # Find folder
-    use_folder, start_gen = find_folder(kwarg_dict)
+    if start_new:
+        use_folder = None
+        start_gen = 0
+    else:
+        use_folder, start_gen = find_folder(kwarg_dict)
 
     if not use_folder:
         milliseconds = int(round(time.time() * 1000))
         use_folder = f'{milliseconds}_{experiment_name}'
+        if start_new:
+            # In case we're doing parallel runs, we don't want to overwrite the folder
+            # Add random hash to folder name
+            use_folder += f'_{get_random_str()}'
+
         os.makedirs(f'{RESULTS_DIR}/{use_folder}')
 
     multi = "no"
@@ -412,8 +422,9 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
 
     print(f'\nRunning best solution for enemy {enemies}')
     print(f'Best folder: {folder}')
-    print(f'Best fitness: {config["best"]}')
-    print(f'Best default fitness: {config["best_log"]}')
+    print(f'Best default  fitness: {config["best_default"]}')
+    if "best_balanced" in config:
+        print(f'Best balanced fitness: {config["best_balanced"]}')
 
     env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
                     enemies=[enemies[0]],
