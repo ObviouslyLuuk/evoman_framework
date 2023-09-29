@@ -18,11 +18,8 @@
     "multi_ini": false,
     "crossover_method": "none",
     "gen": 29,
-    "best": 93.5448261847662,
-    "mean": 72.92494212714679,
-    "std": 18.906864565135162,
-    "best_log": 93.5448261847662,
-    "mean_log": 72.92494212714679,
-    "std_log": 18.906864565135162,
-    "mutation_type": "normal"
+    "mutation_type": "normal",
+    "best_default": 93.5448261847662,
+    "mean_default": 72.92494212714679,
+    "std_default": 18.906864565135162
 }

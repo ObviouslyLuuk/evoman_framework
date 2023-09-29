@@ -19,10 +19,7 @@
     "crossover_method": "ensemble",
     "mutation_type": "normal",
     "gen": 29,
-    "best": 89.65173230259883,
-    "mean": 74.50324258698916,
-    "std": 5.296540454468295,
-    "best_log": 89.65173230259883,
-    "mean_log": 74.50324258698916,
-    "std_log": 5.296540454468295
+    "best_default": 89.65173230259883,
+    "mean_default": 74.50324258698916,
+    "std_default": 5.296540454468295
 }

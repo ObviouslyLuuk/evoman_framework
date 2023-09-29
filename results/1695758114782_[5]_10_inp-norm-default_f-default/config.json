@@ -19,10 +19,7 @@
     "crossover_method": "none",
     "mutation_type": "stochastic_decaying",
     "gen": 29,
-    "best": 93.21057091248859,
-    "mean": 91.18829294739027,
-    "std": 9.398981372121865,
-    "best_log": 93.21057091248859,
-    "mean_log": 91.18829294739027,
-    "std_log": 9.398981372121865
+    "best_default": 93.21057091248859,
+    "mean_default": 91.18829294739027,
+    "std_default": 9.398981372121865
 }
