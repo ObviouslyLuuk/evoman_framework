@@ -190,12 +190,13 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
     pfit is a numpy array of fitnesses.
     mutation_rate is the mutation rate."""
     # Normalize fitnesses
-    pfit_norm = normalize_pop_fitness(pfit[fitness_method])
     if fitness_method == "rank":
-        pfit_norm = calculate_percentile_ranks_prob(pfit_norm)
+        pfit_norm = calculate_percentile_ranks_prob(pfit["default"])
+    else:
+        pfit_norm = normalize_pop_fitness(pfit[fitness_method])
 
     # Print amount of duplicates
-    duplicates = len(pfit) - len(np.unique(pfit[fitness_method]))
+    duplicates = len(pfit) - len(np.unique(pfit["balanced"]))
     print(f'Amount of duplicate fitnesses: {duplicates}')
     # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
     
@@ -230,8 +231,8 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
         ending_std = 0.005  # Replace with your desired ending value
         std_std = 0.5       # standard deviation of the standard deviation of the noise
 
-        std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
-        print(f'>>Std: {std:.6f} . Fitness: mean: {np.mean(pfit[fitness_method]):.4f}, Q5: {np.quantile(pfit[fitness_method], 0.05):.4f}, Q95: {np.quantile(pfit[fitness_method], 0.95):.4f}')
+        std = starting_std * np.exp((np.log(ending_std / starting_std) / 100) * np.mean(pfit["balanced"]) + np.random.normal(0, std_std,1)[0] - .5*std_std**2 )
+        print(f'>>Std: {std:.6f}')
 
         pop_new = mutate_stochastic_decaying(pop_new, std=std, mutation_rate=mutation_rate)
 
@@ -268,9 +269,10 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
             "balanced": np.mean(pfit_combined["balanced"], axis=0),
         }
 
-    selection_pfit_combined = pfit_combined[fitness_method]
     if fitness_method == "rank":
-        selection_pfit_combined = calculate_percentile_ranks_prob(selection_pfit_combined)
+        selection_pfit_combined = calculate_percentile_ranks_prob(pfit_combined["default"])
+    else:
+        selection_pfit_combined = pfit_combined[fitness_method]
 
     # Select survivors
     idx = select_survivors(selection_pfit_combined, survivor_method)
@@ -422,8 +424,7 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
         win_condition = e <= 0
         win_str = 'WON\n' if win_condition else 'LOST\n'
         print(f'Fitness: {f}, player life: {p}, enemy life: {e}, time: {t}')
-        if fitness_method == 'balanced':
-            print(f'custom fitness: {fitness_balanced(p, e, t)}')
+        print(f' balanced fitness: {fitness_balanced(p, e, t)}')
         print(win_str)
 
     if not multi_ini_test:

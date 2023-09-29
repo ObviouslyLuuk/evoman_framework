@@ -145,6 +145,8 @@ def load_population(domain_lower,
             pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
         # Eval
         pfit = eval_fn(env, pop)
+        if fitness_method == "rank":
+            fitness_method = "default"
         env.update_solutions([pop, pfit[fitness_method]])
     return pop, pfit
 
