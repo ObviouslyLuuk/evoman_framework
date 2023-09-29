@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import json
 import matplotlib.pyplot as plt
+from scipy.stats import ttest_ind
 from helpers import RESULTS_DIR
 
 def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, default_fitness=True):
@@ -79,6 +80,7 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
     Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution in eval_best.json.
     Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
     Can use the gain, default fitness, balanced fitness or number of wins as the metric.
+    Also print the results of a t-test comparing the results from folders1 and folders2.
     """
     if not folders1:
         print('No folders given')
@@ -148,5 +150,9 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
             os.makedirs(f'plots/{str(variable)}')
         plt.savefig(f'plots/{str(variable)}/{metric}_boxplot.png')
     plt.show()
+
+    # Print t-test results
+    if folders2:
+        print(f'T-test results for {metric}: {ttest_ind(data[1], data[0])}')
 
 
