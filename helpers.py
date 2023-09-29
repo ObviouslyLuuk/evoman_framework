@@ -156,7 +156,7 @@ def load_population(domain_lower,
 def compare_config(config1, config2):
     """Return True if the two configs are the same, False otherwise. Ignores gen, best, mean and std. 
     Only keys in the first config are checked."""
-    ignore = ['gens', 'headless']
+    ignore = ['gens', 'headless', 'start_new']
     for fitness_method in ['default', 'balanced']:
         ignore.extend([f'best_{fitness_method}', f'mean_{fitness_method}', f'std_{fitness_method}', f'Q5_{fitness_method}', f'Q95_{fitness_method}'])
     for key in config1:

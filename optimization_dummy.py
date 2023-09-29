@@ -414,7 +414,6 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
         config = json.load(f)
     n_hidden_neurons = config['n_hidden_neurons']
     normalization_method = config['normalization_method']
-    fitness_method = config['fitness_method']
 
     print(config)
 
@@ -444,20 +443,32 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
         print(f' balanced fitness: {fitness_balanced(p, e, t)}')
         print(win_str)
 
+    total_gain = 0
     if not multi_ini_test:
-        f,p,e,t = env.play(pcont=best_solution)
-        print_result(f, p, e, t)
+        for enemy in enemies:
+            env.enemies = [enemy]
+            print(f'Running enemy {enemy}')
+            f,p,e,t = env.play(pcont=best_solution)
+            print_result(f, p, e, t)
+            total_gain += p-e
     else:
         for enemy in enemies:
             env.enemies = [enemy]
             print(f'Running enemy {enemy}')
             enemy_positions = ENEMY_POSITIONS[enemy]
 
+            gain_ = 0
             for enemy_position in enemy_positions:
                 env.player_controller.x_dist = enemy_position
                 
                 f,p,e,t = env.play(pcont=best_solution)
                 print_result(f, p, e, t)
+                gain_ += p-e
+            total_gain += gain_ / len(enemy_positions)
+
+    print(f'Total gain: {total_gain}')
+
+    
 
 
 if __name__ == '__main__':

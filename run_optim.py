@@ -50,7 +50,7 @@ if __name__ == '__main__':
                 "survivor_method":      args.survivor_method,      # "greedy", "multinomial", "tournament"
                 "crossover_method":     args.crossover_method,     # "none", "default", "ensemble"
                 "mutation_type":        args.mutation_type,        # "normal", "stochastic_decaying"
-                "gens":                 30,
+                "gens":                 100,
                 "n_hidden_neurons":     10,
                 "pop_size":             100,
                 "start_new":            args.start_new,            # True, False
@@ -63,7 +63,13 @@ if __name__ == '__main__':
             if RUN_EVOLUTION:
                 if not args.start_new:
                     logged_runs = compare_configs(find_folders(config), config=config, results_dir=RESULTS_DIR)
-                    if len(logged_runs) >= runs_per_experiment:
+                    logged_runs_complete = []
+                    for run in logged_runs:
+                        with open(f'{RESULTS_DIR}/{run}/config.json', 'r') as f:
+                            saved_config = json.load(f)
+                        if saved_config['gen'] == config['gens']-1:
+                            logged_runs_complete.append(run)
+                    if len(logged_runs_complete) >= runs_per_experiment:
                         print(f'Experiment {config["experiment_name"]} already run {runs_per_experiment} times, skipping')
                         continue
 
