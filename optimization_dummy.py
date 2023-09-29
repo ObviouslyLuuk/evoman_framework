@@ -246,8 +246,8 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
         # Combine old and new population
         pop_combined = np.vstack((pop, pop_new))
         pfit_combined = {
-            "default": np.append(pfit, pfit_new["default"]),
-            "balanced": np.append(pfit, pfit_new["balanced"]),
+            "default": np.append(pfit["default"], pfit_new["default"]),
+            "balanced": np.append(pfit["balanced"], pfit_new["balanced"]),
         }
     else:
         # Combine old and new population
@@ -361,7 +361,10 @@ def main(
                                    randomini=randomini, multi_ini=multi_ini, enemies=actual_enemies)
         
         # Get stats
-        best_idx    = np.argmax(pfit)
+        if fitness_method == "rank":
+            best_idx    = np.argmax(pfit["default"])
+        else:
+            best_idx    = np.argmax(pfit[fitness_method])
 
         results_dict = {
             'gen': gen,
@@ -383,7 +386,10 @@ def main(
             np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
         
         # Save environment
-        env.update_solutions([pop, pfit])
+        if fitness_method == "rank":
+            env.update_solutions([pop, pfit["default"]])
+        else:
+            env.update_solutions([pop, pfit[fitness_method]])
         env.save_state()
 
     env.state_to_log() # checks environment state
@@ -446,11 +452,11 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
 if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
-        "enemies":              [6],                # [1, 2, 3, 4, 5, 6, 7, 8]
+        "enemies":              [3],                # [1, 2, 3, 4, 5, 6, 7, 8]
         "randomini":            "no",               # "yes", "no"
         "multi_ini":            False,               # True, False
         "normalization_method": "default",  # "default", "domain_specific", "around_0"
-        "fitness_method":       "rank",         # "default", "balanced", "rank"
+        "fitness_method":       "default",         # "default", "balanced", "rank"
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
         "crossover_method":     "none",     # "none", "default", "ensemble"
@@ -462,7 +468,7 @@ if __name__ == '__main__':
 
     config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
 
-    RUN_EVOLUTION = False
+    RUN_EVOLUTION = True
     RANDOMINI_TEST = "yes"
 
     # Track time

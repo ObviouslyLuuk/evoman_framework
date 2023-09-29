@@ -35,7 +35,8 @@ def save_results(use_folder, results_dict, kwarg_dict={}):
     fitness_method = kwarg_dict['fitness_method']
     print(f'\n GENERATION {results_dict["gen"]}  (using {fitness_method} fitness)')
     for fitness_method in ['default', 'balanced']:
-        print(f'  {fitness_method} fitness:  best: {round(results_dict[f"best_{fitness_method}"],6)} mean: {round(results_dict[f"mean_{fitness_method}"],6)} std: {round(results_dict[f"std_{fitness_method}"],6)} Q5: {round(results_dict[f"Q5_{fitness_method}"],6)} Q95: {round(results_dict[f"Q95_{fitness_method}"],6)}')
+        # Always make fitness_method printed string the same length
+        print(f'  {fitness_method:<9} fitness:  best: {round(results_dict[f"best_{fitness_method}"],6)} mean: {round(results_dict[f"mean_{fitness_method}"],6)} std: {round(results_dict[f"std_{fitness_method}"],6)} Q5: {round(results_dict[f"Q5_{fitness_method}"],6)} Q95: {round(results_dict[f"Q95_{fitness_method}"],6)}')
 
     # Save results using pandas
     # Load csv if it exists
@@ -135,7 +136,7 @@ def load_population(domain_lower,
         # Load population
         env.load_state()
         pop = env.solutions[0]
-        pfit = env.solutions[1]
+        pfit = eval_fn(env, pop)
     else:
         print('Initializing new population...')
         # Initialize population
