@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind
 from helpers import RESULTS_DIR
 
-def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, fitness_method="default"):
+def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, fitness_method="default", plot_separate_lines=False):
     """
     Creates a plot of the fitness vs generation for the given folder.
     One line for the average best fitness, one for the average mean fitness and a band for the standard deviation of both.
@@ -34,10 +34,15 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     
     # Plot gen vs best fitness
     plt.figure(figsize=figsize)
-    plt.plot(aggr_df[f'best_{fitness_method}','mean'], color='green')
-    plt.plot(aggr_df[f'mean_{fitness_method}','mean'], color='green', linestyle='dashed')
-    plt.fill_between(range(len(aggr_df[f'best_{fitness_method}','mean'])), aggr_df[f'best_{fitness_method}','mean'] - aggr_df[f'best_{fitness_method}','std'], aggr_df[f'best_{fitness_method}','mean'] + aggr_df[f'best_{fitness_method}','std'], alpha=0.3, color='green')
-    plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='green')
+    if not plot_separate_lines:
+        plt.plot(aggr_df[f'best_{fitness_method}','mean'], color='green')
+        plt.plot(aggr_df[f'mean_{fitness_method}','mean'], color='green', linestyle='dashed')
+        plt.fill_between(range(len(aggr_df[f'best_{fitness_method}','mean'])), aggr_df[f'best_{fitness_method}','mean'] - aggr_df[f'best_{fitness_method}','std'], aggr_df[f'best_{fitness_method}','mean'] + aggr_df[f'best_{fitness_method}','std'], alpha=0.3, color='green')
+        plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='green')
+    else:
+        for df in dfs:
+            plt.plot(df[f'best_{fitness_method}'], color='green', alpha=0.3)
+            plt.plot(df[f'mean_{fitness_method}'], color='green', linestyle='dashed', alpha=0.3)
 
     if folders2:
         dfs = []
@@ -50,20 +55,31 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         aggr_df = aggr_df.iloc[:min_len]
 
         # Plot gen vs best fitness
-        plt.plot(aggr_df[f'best_{fitness_method}','mean'], color='blue')
-        plt.plot(aggr_df[f'mean_{fitness_method}','mean'], color='blue', linestyle='dashed')
-        plt.fill_between(range(len(aggr_df[f'best_{fitness_method}','mean'])), aggr_df[f'best_{fitness_method}','mean'] - aggr_df[f'best_{fitness_method}','std'], aggr_df[f'best_{fitness_method}','mean'] + aggr_df[f'best_{fitness_method}','std'], alpha=0.3, color='blue')
-        plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='blue')
+        if not plot_separate_lines:
+            plt.plot(aggr_df[f'best_{fitness_method}','mean'], color='blue')
+            plt.plot(aggr_df[f'mean_{fitness_method}','mean'], color='blue', linestyle='dashed')
+            plt.fill_between(range(len(aggr_df[f'best_{fitness_method}','mean'])), aggr_df[f'best_{fitness_method}','mean'] - aggr_df[f'best_{fitness_method}','std'], aggr_df[f'best_{fitness_method}','mean'] + aggr_df[f'best_{fitness_method}','std'], alpha=0.3, color='blue')
+            plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='blue')
+        else:
+            for df in dfs:
+                plt.plot(df[f'best_{fitness_method}'], color='blue', alpha=0.3)
+                plt.plot(df[f'mean_{fitness_method}'], color='blue', linestyle='dashed', alpha=0.3)
 
         # Add legend
         methods = list(variable.values())[0]
-        plt.legend(
-            [f'Avg Best {methods[0]}', f'Avg Mean {methods[0]}', f'Best Std {methods[0]}', f'Mean Std {methods[0]}', f'Avg Best {methods[1]}', f'Avg Mean {methods[1]}', f'Best Std {methods[1]}', f'Mean Std {methods[1]}'],
-            bbox_to_anchor=(1.05, 1), loc='upper left'
-        )
+        if not plot_separate_lines:
+            plt.legend(
+                [f'Avg Best {methods[0]}', f'Avg Mean {methods[0]}', f'Best Std {methods[0]}', f'Mean Std {methods[0]}', f'Avg Best {methods[1]}', f'Avg Mean {methods[1]}', f'Best Std {methods[1]}', f'Mean Std {methods[1]}'],
+                bbox_to_anchor=(1.05, 1), loc='upper left'
+            )
+        else:
+            plt.legend([methods[0], methods[1]], bbox_to_anchor=(1.05, 1), loc='upper left')
     else:
         # Add legend
-        plt.legend(['Avg Best', 'Avg Mean', 'Best Std', 'Mean Std'])
+        if not plot_separate_lines:
+            plt.legend(['Avg Best', 'Avg Mean', 'Best Std', 'Mean Std'])
+        else:
+            plt.legend(['Best', 'Mean'])
 
     plt.title('Fitness vs generation')
     plt.xlabel('Generation')

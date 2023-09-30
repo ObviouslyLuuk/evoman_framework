@@ -1,5 +1,5 @@
 {
-    "gen": 29,
+    "gen": 99,
     "enemies": [
         1,
         2,
@@ -12,76 +12,76 @@
     ],
     "results": [
         {
-            "gain": 10.600000000000904,
-            "fitness": 39.50040266390931,
-            "fitness_balanced": 68.87959913428301,
+            "gain": 118.80000000000118,
+            "fitness": 53.61638503525353,
+            "fitness_balanced": 69.86266573298161,
             "wins": [
                 false,
                 true,
                 false,
                 false,
                 true,
-                false,
+                true,
                 true,
                 true
             ]
         },
         {
-            "gain": 10.600000000000904,
-            "fitness": 39.50040266390931,
-            "fitness_balanced": 68.87959913428301,
+            "gain": 118.80000000000118,
+            "fitness": 53.61638503525353,
+            "fitness_balanced": 69.86266573298161,
             "wins": [
                 false,
                 true,
                 false,
                 false,
                 true,
-                false,
+                true,
                 true,
                 true
             ]
         },
         {
-            "gain": 10.600000000000904,
-            "fitness": 39.50040266390931,
-            "fitness_balanced": 68.87959913428301,
+            "gain": 118.80000000000118,
+            "fitness": 53.61638503525353,
+            "fitness_balanced": 69.86266573298161,
             "wins": [
                 false,
                 true,
                 false,
                 false,
                 true,
-                false,
+                true,
                 true,
                 true
             ]
         },
         {
-            "gain": 10.600000000000904,
-            "fitness": 39.50040266390931,
-            "fitness_balanced": 68.87959913428301,
+            "gain": 118.80000000000118,
+            "fitness": 53.61638503525353,
+            "fitness_balanced": 69.86266573298161,
             "wins": [
                 false,
                 true,
                 false,
                 false,
                 true,
-                false,
+                true,
                 true,
                 true
             ]
         },
         {
-            "gain": 10.600000000000904,
-            "fitness": 39.50040266390931,
-            "fitness_balanced": 68.87959913428301,
+            "gain": 118.80000000000118,
+            "fitness": 53.61638503525353,
+            "fitness_balanced": 69.86266573298161,
             "wins": [
                 false,
                 true,
                 false,
                 false,
                 true,
-                false,
+                true,
                 true,
                 true
             ]

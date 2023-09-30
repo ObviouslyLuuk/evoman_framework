@@ -23,18 +23,22 @@ Notes:
 - look into randomini in the environment, for evolving?
     - this is interesting. Evolving with randomini does way worse. Maybe because the fittest individuals might be complete shit in the next gen, so there's too much
     randomness? Could try only starting randomini after reaching a certain fitness. Could also try multiple randomini evals per generation to deemphasize chance
+    - Implemented multi-ini where the randomness is taken away and it just evaluates every individual on every enemy position
 - for task II be mindful of whether they use their player_controller for the competition or not (this would affect whether we train with theirs or our own)
 inputs are limited in the following ways:
 - no info about where the player is on the map
 - no info about the map itself (like if there's a hill in front of the player)
+- no info about the state of the enemy (for enemy 4 specifically)
+- only a single timestep of inputs
 
 Todo:
-- when using different fitness function, save both in the logs
-- automatically plot comparisons between methods
 - make plot legends and text larger
-- make box plots of those 5 tests (where each point represents a run, so the average of 5 tests), and run a t-test on the results
 
 Log:
 - changed input normalization
-- changed fitness function (this had a huge impact)
-- parent selection multinomial seems to do better than greedy and tournament
+- changed fitness function
+- parent selection multinomial (fitness proportionate selection) seems to do better than greedy and tournament
+- same thing for survivor selection
+- tried crossover like described in the multi_evolution baseline paper, and also an ensemble crossover method, but didn't improve
+- implemented adaptive decaying mutation noise based on average fitness of the population
+- experimented with evaluating each individual on multiple enemy positions, this improves randomini performance obviously
