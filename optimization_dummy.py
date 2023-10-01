@@ -196,7 +196,7 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
         pfit_norm = normalize_pop_fitness(pfit[fitness_method])
 
     # Print amount of duplicates
-    duplicates = len(pfit) - len(np.unique(pfit["balanced"]))
+    duplicates = len(pfit["balanced"]) - len(np.unique(pfit["balanced"]))
     print(f'Amount of duplicate fitnesses: {duplicates}')
     # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
     
