@@ -1,10 +1,13 @@
 from optimization_dummy import main, run_test
 import time
 import json
+import os
 import argparse
 from helpers import RESULTS_DIR, find_folders, compare_configs
 
 if __name__ == '__main__':
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+
     # Get arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--randomini',              type=str, default='no',         help='usage: --randomini yes/no')
@@ -18,8 +21,8 @@ if __name__ == '__main__':
     
     parser.add_argument('--start_new',              dest='start_new',       action='store_true') # this means --start_new is True if included
     parser.add_argument('--enemy_sets',             type=str, default='1,2,3,4,5,6,7,8',   help='usage: --enemy_sets 1,2,3,4,5,6,7,8/12,13/1')
-    parser.add_argument('--n_runs',                 type=int, default=10,           help='usage: --n_runs 10')
-    parser.add_argument('--run_evolution',          dest='run_evolution',   action='store_true') # this means --run_evolution is True if included
+    parser.add_argument('--n_runs',                 type=int, default=30,           help='usage: --n_runs 10')
+    parser.add_argument('--run_test',               dest='run_test',        action='store_true') # this means --run_test is True if included
     parser.add_argument('--name',                   type=str, default='test',       help='usage: --name test')
 
     args = parser.parse_args()
@@ -27,7 +30,7 @@ if __name__ == '__main__':
     # Get sets like [[1], [2], [3], [4], [5], [6], [7], [8]] or [[1, 2], [1, 3]] or [[1]] from string
     args.enemy_sets = [[int(e) for e in eset] for eset in args.enemy_sets.split(',')]
 
-    RUN_EVOLUTION = args.run_evolution
+    RUN_EVOLUTION = not args.run_test
     RANDOMINI_TEST = "no"
     MULTI_INI_TEST = False
 
@@ -50,7 +53,7 @@ if __name__ == '__main__':
                 "survivor_method":      args.survivor_method,      # "greedy", "multinomial", "tournament"
                 "crossover_method":     args.crossover_method,     # "none", "default", "ensemble"
                 "mutation_type":        args.mutation_type,        # "normal", "stochastic_decaying"
-                "gens":                 100,
+                "gens":                 30,
                 "n_hidden_neurons":     10,
                 "pop_size":             100,
                 "start_new":            args.start_new,            # True, False

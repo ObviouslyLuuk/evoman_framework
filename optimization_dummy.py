@@ -196,7 +196,7 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
         pfit_norm = normalize_pop_fitness(pfit[fitness_method])
 
     # Print amount of duplicates
-    duplicates = len(pfit) - len(np.unique(pfit["balanced"]))
+    duplicates = len(pfit["balanced"]) - len(np.unique(pfit["balanced"]))
     print(f'Amount of duplicate fitnesses: {duplicates}')
     # mutation_rate += duplicates / len(pop) * 0.5 # Increase mutation rate with more duplicates
     
@@ -476,12 +476,12 @@ if __name__ == '__main__':
         # "experiment_name":      'optimization_test',
         "enemies":              [3],                # [1, 2, 3, 4, 5, 6, 7, 8]
         "randomini":            "no",               # "yes", "no"
-        "multi_ini":            False,               # True, False
-        "normalization_method": "default",  # "default", "domain_specific", "around_0"
-        "fitness_method":       "default",         # "default", "balanced", "rank"
-        "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
-        "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
-        "crossover_method":     "none",     # "none", "default", "ensemble"
+        "multi_ini":            False,              # True, False
+        "normalization_method": "default",          # "default", "domain_specific", "around_0"
+        "fitness_method":       "rank",             # "default", "balanced", "rank"
+        "pick_parent_method":   "multinomial",      # "tournament", "multinomial", "greedy"
+        "survivor_method":      "multinomial",      # "greedy", "multinomial", "tournament"
+        "crossover_method":     "none",             # "none", "default", "ensemble"
         "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
         "gens":                 30,
         "n_hidden_neurons":     10,

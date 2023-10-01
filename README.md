@@ -8,8 +8,6 @@ OUR CODE:
 - helpers.py: contains code for saving results and loading solutions/populations
 - custom_controller.py: contains our custom controller that is used to play the game (main addition is normalizing the inputs differently)
 - eval_best.py: code to test every run with the best solution 5 times and save the results
-- plotting.py: code to retrieve and plot the results
-- plotting.ipynb: notebook for visualizing the results using plotting.py
 - environment.yml: conda environment file
 
 Log:
