@@ -1,7 +1,5 @@
 Evoman is a video game playing framework to be used as a testbed for optimization algorithms.
 
-A demo can be found here:  https://www.youtube.com/watch?v=ZqaMjd1E4ZI
-
 Project by Alexander, Mamoune, Marisini, and Luuk
 
 OUR CODE:
@@ -12,11 +10,16 @@ OUR CODE:
 - eval_best.py: code to test every run with the best solution 5 times and save the results
 - plotting.py: code to retrieve and plot the results
 - plotting.ipynb: notebook for visualizing the results using plotting.py
+- environment.yml: conda environment file
 
-Questions:
-- When using two different fitness functions in Task I, do you pick one of the two functions to plot for both? Otherwise the differences seen in the plots don't necessarily say anything meaningful (as a simple example one fitness function could be much more strict than the other, whilst it might actually result in better agents if compared by the same function). On the other hand maybe the comparison between methods in these lines matters less than the progress that is seen in the line, in that case of course their own respective fitness functions should be used. Which is expected of us?
-- for task II be mindful of whether they use their player_controller for the competition or not (this would affect whether we train with theirs or our own controller)
-- In the slides (workshop-standardassigment-2023.pdf) it says on slide 21 that the metric to be shown in the boxplots is energy for task I and gain/number of defeats for task II, but in the FAQ the answer to question 24 says you should use the measure that was used to select individuals (this seems to make less sense because the measure might be different per method, thus making the results incomparable)
+Log:
+- changed input normalization
+- changed fitness function
+- parent selection multinomial (fitness proportionate selection) seems to do better than greedy and tournament
+- same thing for survivor selection
+- tried crossover like described in the multi_evolution baseline paper, and also an ensemble crossover method, but didn't improve
+- implemented adaptive decaying mutation noise based on average fitness of the population
+- experimented with evaluating each individual on multiple enemy positions, this improves randomini performance obviously
 
 Notes:
 - could be useful tracking the duplicate fitness scores to see how diverse the population is
@@ -30,15 +33,3 @@ inputs are limited in the following ways:
 - no info about the map itself (like if there's a hill in front of the player)
 - no info about the state of the enemy (for enemy 4 specifically)
 - only a single timestep of inputs
-
-Todo:
-- make plot legends and text larger
-
-Log:
-- changed input normalization
-- changed fitness function
-- parent selection multinomial (fitness proportionate selection) seems to do better than greedy and tournament
-- same thing for survivor selection
-- tried crossover like described in the multi_evolution baseline paper, and also an ensemble crossover method, but didn't improve
-- implemented adaptive decaying mutation noise based on average fitness of the population
-- experimented with evaluating each individual on multiple enemy positions, this improves randomini performance obviously
