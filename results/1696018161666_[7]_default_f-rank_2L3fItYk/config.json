@@ -1,0 +1,33 @@
+{
+    "experiment_name": "[7]_default_f-rank",
+    "enemies": [
+        7
+    ],
+    "n_hidden_neurons": 10,
+    "domain_upper": 1,
+    "domain_lower": -1,
+    "pop_size": 100,
+    "gens": 30,
+    "mutation_rate": 0.2,
+    "normalization_method": "default",
+    "fitness_method": "rank",
+    "pick_parent_method": "multinomial",
+    "survivor_method": "multinomial",
+    "randomini": "no",
+    "headless": true,
+    "multi_ini": false,
+    "crossover_method": "none",
+    "mutation_type": "normal",
+    "start_new": true,
+    "gen": 29,
+    "best_default": 94.62936470590374,
+    "mean_default": 85.68167329672801,
+    "std_default": 15.237124302297682,
+    "Q5_default": 58.13828622585887,
+    "Q95_default": 94.15089742431715,
+    "best_balanced": 93.1827201631851,
+    "mean_balanced": 71.11355421804082,
+    "std_balanced": 23.654622374102942,
+    "Q5_balanced": 30.130578533145275,
+    "Q95_balanced": 90.57274631484283
+}

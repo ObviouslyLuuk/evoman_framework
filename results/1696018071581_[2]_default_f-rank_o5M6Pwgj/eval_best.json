@@ -1,0 +1,48 @@
+{
+    "gen": 29,
+    "enemies": [
+        2
+    ],
+    "results": [
+        {
+            "gain": 88,
+            "fitness": 93.72482618476617,
+            "fitness_balanced": 88.91859563501554,
+            "wins": [
+                true
+            ]
+        },
+        {
+            "gain": 88,
+            "fitness": 93.72482618476617,
+            "fitness_balanced": 88.91859563501554,
+            "wins": [
+                true
+            ]
+        },
+        {
+            "gain": 88,
+            "fitness": 93.72482618476617,
+            "fitness_balanced": 88.91859563501554,
+            "wins": [
+                true
+            ]
+        },
+        {
+            "gain": 88,
+            "fitness": 93.72482618476617,
+            "fitness_balanced": 88.91859563501554,
+            "wins": [
+                true
+            ]
+        },
+        {
+            "gain": 88,
+            "fitness": 93.72482618476617,
+            "fitness_balanced": 88.91859563501554,
+            "wins": [
+                true
+            ]
+        }
+    ]
+}
