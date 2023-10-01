@@ -9,6 +9,8 @@ OUR CODE:
 - custom_controller.py: contains our custom controller that is used to play the game (main addition is normalizing the inputs differently)
 - eval_best.py: code to test every run with the best solution 5 times and save the results
 - environment.yml: conda environment file
+- plotting.py: code to plot the results
+- plotting.ipynb: jupyter notebook to visualize the results using the plotting.py code
 
 Log:
 - changed input normalization
