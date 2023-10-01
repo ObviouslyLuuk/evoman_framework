@@ -14,11 +14,18 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     if not folders1:
         print('No folders given')
         return
+    
+    enemies = None
 
     dfs = []
     for folder in folders1:
         # Read data from csv file
         dfs.append(pd.read_csv(f'{results_dir}/{folder}/results.csv'))
+
+        if not enemies:
+            with open(f'{results_dir}/{folder}/config.json', 'r') as f:
+                saved_config = json.load(f)
+            enemies = saved_config['enemies']
 
     # Get shortest df
     min_len = min([len(df) for df in dfs])
@@ -29,7 +36,10 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     if key not in dfs[0].columns:
         fitness_method = "default"
 
-    aggr_df = pd.concat(dfs).groupby('gen').agg({f'best_{fitness_method}': ['mean', 'std'], f'mean_{fitness_method}': ['mean', 'std']})
+    aggr_df = pd.concat(dfs).groupby('gen').agg({
+        f'best_{fitness_method}': ['mean', 'std'], 
+        f'mean_{fitness_method}': ['mean', 'std'],
+    })
     aggr_df = aggr_df.iloc[:min_len] # Clip to shortest df
     
     # Plot gen vs best fitness
@@ -81,7 +91,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         else:
             plt.legend(['Best', 'Mean'])
 
-    plt.title('Fitness vs generation')
+    plt.title(f'Fitness by generation - Enemy {enemies}')
     plt.xlabel('Generation')
     plt.ylabel(f'Fitness ({fitness_method})')
     if save_png:
@@ -100,6 +110,8 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
     if not folders1:
         print('No folders given')
         return
+    
+    enemies = None
 
     add_str = ""
     if randomini_eval:
@@ -109,6 +121,11 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
 
     runs = []
     for folder in folders1:
+        if not enemies:
+            with open(f'{results_dir}/{folder}/config.json', 'r') as f:
+                saved_config = json.load(f)
+            enemies = saved_config['enemies']
+
         # Create empty df with columns for [gain, fitness, fitness_balanced, n_wins]
         df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
 
@@ -156,7 +173,7 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
     # Plot boxplot(s)
     plt.boxplot(data)
     plt.xticks([1,2], list(variable.values())[0])
-    plt.title(f'{metric.capitalize()} boxplot')
+    plt.title(f'{metric.capitalize()} boxplot - Enemy {enemies}')
 
     plt.xlabel('Method')
     plt.ylabel(metric.capitalize())
