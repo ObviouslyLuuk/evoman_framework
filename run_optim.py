@@ -7,13 +7,10 @@ from helpers import RESULTS_DIR, find_folders, compare_configs
 if __name__ == '__main__':
     # Get arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--randomini',              type=str, default='no',         help='usage: --randomini yes/no')
-    parser.add_argument('--multi_ini',              type=bool, default=False,       help='usage: --multi_ini True/False')
-    parser.add_argument('--normalization_method',   type=str, default='default',    help='usage: --normalization_method default/domain_specific/around_0')
     parser.add_argument('--fitness_method',         type=str, default='rank',       help='usage: --fitness_method default/balanced/rank')
     parser.add_argument('--pick_parent_method',     type=str, default='multinomial', help='usage: --pick_parent_method multinomial/tournament/greedy')
     parser.add_argument('--survivor_method',        type=str, default='multinomial', help='usage: --survivor_method greedy/multinomial/tournament')
-    parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default/ensemble')
+    parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default')
     parser.add_argument('--mutation_type',          type=str, default='normal',     help='usage: --mutation_type normal/stochastic_decaying')
     
     parser.add_argument('--start_new',              dest='start_new',       action='store_true') # this means --start_new is True if included
@@ -28,8 +25,6 @@ if __name__ == '__main__':
     args.enemy_sets = [[int(e) for e in eset] for eset in args.enemy_sets.split(',')]
 
     RUN_EVOLUTION = args.run_evolution
-    RANDOMINI_TEST = "no"
-    MULTI_INI_TEST = False
 
     runs_per_experiment = args.n_runs
     if not RUN_EVOLUTION:
@@ -42,22 +37,18 @@ if __name__ == '__main__':
             config = {
                 "experiment_name":      f"{enemies}_{args.name}_f-{args.fitness_method}",
                 "enemies":              enemies,            # [1, 2, 3, 4, 5, 6, 7, 8]
-                "randomini":            args.randomini,     # "yes", "no"
-                "multi_ini":            args.multi_ini,     # True, False
-                "normalization_method": args.normalization_method, # "default", "domain_specific", "around_0"
                 "fitness_method":       args.fitness_method,       # "default", "balanced", "rank"
                 "pick_parent_method":   args.pick_parent_method,   # "multinomial", "tournament", "greedy"
                 "survivor_method":      args.survivor_method,      # "greedy", "multinomial", "tournament"
-                "crossover_method":     args.crossover_method,     # "none", "default", "ensemble"
+                "crossover_method":     args.crossover_method,     # "none", "default"
                 "mutation_type":        args.mutation_type,        # "normal", "stochastic_decaying"
                 "gens":                 100,
-                "n_hidden_neurons":     10,
                 "pop_size":             100,
                 "start_new":            args.start_new,            # True, False
             }
 
             if args.name == 'test':
-                config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
+                config["experiment_name"] = f'{config["enemies"]}_f-{config["fitness_method"]}'
 
 
             if RUN_EVOLUTION:
@@ -83,6 +74,4 @@ if __name__ == '__main__':
                     "enemies": enemies,
                 }
                 based_on_eval_best = ''
-                if MULTI_INI_TEST:
-                    based_on_eval_best = '_multi-ini'
-                run_test(config, randomini_test=RANDOMINI_TEST, multi_ini_test=MULTI_INI_TEST, based_on_eval_best=based_on_eval_best)
+                run_test(config, based_on_eval_best=based_on_eval_best)

@@ -12,7 +12,7 @@ import time
 import json
 
 from evoman.environment import Environment
-from custom_controller import player_controller
+from demo_controller import player_controller
 from helpers import save_results, load_population, find_folder, find_folders, RESULTS_DIR, get_best, ENEMY_POSITIONS, get_random_str
 
 # imports other libs
@@ -25,43 +25,19 @@ def fitness_balanced(player_life, enemy_life, time):
     """Returns a balanced fitness, based on the player life, enemy life and time"""
     return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
 
-def simulation(env, x, multi_ini=False, enemies=None):
+def simulation(env, x):
     """Returns fitness for individual x, where x is a vector of weights and biases"""
-    if not multi_ini:
-        f,p,e,t = env.play(pcont=x)
-        f = {
-            "default": f,
-            "balanced": fitness_balanced(p, e, t),
-        }
-    else:
-        fitnesses = {
-            "default": np.zeros(len(enemies)),
-            "balanced": np.zeros(len(enemies)),
-        }
-        for i, enemy in enumerate(enemies):
-            env.enemies = [enemy]
-            positions = ENEMY_POSITIONS[enemy]
-            fitnesses_ = {
-                "default": np.zeros(len(positions)),
-                "balanced": np.zeros(len(positions)),
-            }
-            for j, position in enumerate(positions):
-                env.player_controller.x_dist = position
-                f,p,e,t = env.play(pcont=x)
-                fitnesses_["default"][j] = f
-                fitnesses_["balanced"][j] = fitness_balanced(p, e, t)
-            fitnesses["default"][i] = np.mean(fitnesses_["default"])
-            fitnesses["balanced"][i] = np.mean(fitnesses_["balanced"])
-        f = {
-            "default": np.mean(fitnesses["default"]) - np.std(fitnesses["default"]),
-            "balanced": np.mean(fitnesses["balanced"]) - np.std(fitnesses["balanced"]),
-        }
+    f,p,e,t = env.play(pcont=x)
+    f = {
+        "default": f,
+        "balanced": fitness_balanced(p, e, t),
+    }
     return f
 
-def evaluate(env, x, multi_ini=False, enemies=None):
+def evaluate(env, x):
     """Returns tuple of two arrays of fitnesses for population x, the first is the default f, the other is the one used.
     x is a numpy array of individuals"""
-    both_f = [simulation(env, individual, multi_ini=multi_ini, enemies=enemies) for individual in x]
+    both_f = [simulation(env, individual) for individual in x]
     f = {
         "default": np.array([f["default"] for f in both_f]),
         "balanced": np.array([f["balanced"] for f in both_f]),
@@ -171,19 +147,8 @@ def crossover(parents, crossover_method):
         return children
     elif crossover_method == 'none':
         return parents.copy()
-    elif crossover_method == 'ensemble':
-        children = np.zeros((len(parents), *parents.shape[1:]))
-        for i in range(0, len(parents), 2):
-            p1 = parents[i]
-            p2 = parents[i+1]
-            for j in range(2):
-                # Child's network 0 is one of parent 1's networks
-                children[i+j][0] = p1[np.random.randint(2)]
-                # Child's network 1 is one of parent 2's networks
-                children[i+j][1] = p2[np.random.randint(2)]
-        return children
 
-def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, randomini="no", multi_ini=False, enemies=None):
+def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -240,34 +205,14 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
     pop_new = np.clip(pop_new, -1, 1)
 
     # Evaluate new population
-    if randomini == "no":
-        pfit_new = evaluate(env, pop_new, multi_ini=multi_ini, enemies=enemies)
-        
-        # Combine old and new population
-        pop_combined = np.vstack((pop, pop_new))
-        pfit_combined = {
-            "default": np.append(pfit["default"], pfit_new["default"]),
-            "balanced": np.append(pfit["balanced"], pfit_new["balanced"]),
-        }
-    else:
-        # Combine old and new population
-        pop_combined = np.vstack((pop, pop_new))
-
-        # Run evaluation on new population n times and take avg
-        n_times = 10
-
-        pfit_combined = {
-            "default": np.zeros((n_times, len(pop_combined))),
-            "balanced": np.zeros((n_times, len(pop_combined))),
-        }
-        for i in range(n_times):
-            pfit_i = evaluate(env, pop_combined, fitness_method=fitness_method, multi_ini=False)
-            pfit_combined["default"][i] = pfit_i["default"]
-            pfit_combined["balanced"][i] = pfit_i["balanced"]
-        pfit_combined = {
-            "default": np.mean(pfit_combined["default"], axis=0),
-            "balanced": np.mean(pfit_combined["balanced"], axis=0),
-        }
+    pfit_new = evaluate(env, pop_new)
+    
+    # Combine old and new population
+    pop_combined = np.vstack((pop, pop_new))
+    pfit_combined = {
+        "default": np.append(pfit["default"], pfit_new["default"]),
+        "balanced": np.append(pfit["balanced"], pfit_new["balanced"]),
+    }
 
     if fitness_method == "rank":
         selection_pfit_combined = calculate_percentile_ranks_prob(pfit_combined["default"])
@@ -295,17 +240,31 @@ def main(
         pop_size = 100,
         gens = 100,
         mutation_rate = 0.2,
-        normalization_method = "domain_specific",
+        normalization_method = "default",
         fitness_method = "balanced",
         pick_parent_method = "multinomial",
         survivor_method = "greedy",
-        randomini = "no",
         headless = True,
-        multi_ini = True,
+        multi_ini = False,
+        randomini = "no",
         crossover_method = "none",
         mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
         start_new = False,
 ):
+    # Remove old options
+    if multi_ini:
+        print("Multi ini has been removed, setting to False")
+        multi_ini = False
+    if randomini == "yes":
+        print("randomini support has been removed, setting to no")
+        randomini = "no"
+    if crossover_method == "ensemble":
+        print("Ensemble crossover has been removed, setting to none")
+        crossover_method = "none"
+    if normalization_method != "default":
+        print("Normalization method has been removed, setting to default")
+        normalization_method = "default"
+
     kwarg_dict = locals()
 
     # choose this for not using visuals and thus making experiments faster
@@ -335,23 +294,20 @@ def main(
         os.makedirs(f'{RESULTS_DIR}/{use_folder}')
 
     multi = "no"
-    actual_enemies = enemies
-    if len(enemies) > 1 and randomini == "no": # if randomini is yes, then we manually do multi
+    if len(enemies) > 1:
         multi = "yes"
-    elif randomini == "yes":
-        enemies = [enemies[0]]
 
     # initializes simulation in individual evolution mode, for single static enemy.
     env = Environment(experiment_name=f'{RESULTS_DIR}/{use_folder}',
                     multiplemode=multi,
                     enemies=enemies,
                     playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons, normalization_method, crossover_method=crossover_method), # you  can insert your own controller here
+                    player_controller=player_controller(n_hidden_neurons), # you  can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="fastest",
                     visuals=visuals,
-                    randomini=randomini)
+                    randomini="no")
     env.player_controller.env = env
 
     # number of weights for multilayer with 10 hidden neurons
@@ -361,14 +317,14 @@ def main(
         n_vars = (env.get_num_sensors()+1)*5
 
     # Load population
-    pop, pfit = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0, crossover_method=crossover_method)
+    pop, pfit = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0)
 
     # For each generation
     for gen in range(start_gen, gens):
         # Perform one step of evolution
         pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
                                    pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
-                                   randomini=randomini, multi_ini=multi_ini, enemies=actual_enemies)
+                                )
         
         # Get stats
         if fitness_method == "rank":
@@ -405,7 +361,7 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_best=None):
+def run_test(config, based_on_eval_best=None):
     """Run the best solution for the given config"""
     enemies = config['enemies']
 
@@ -413,7 +369,6 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
     with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
         config = json.load(f)
     n_hidden_neurons = config['n_hidden_neurons']
-    normalization_method = config['normalization_method']
 
     print(config)
 
@@ -428,12 +383,12 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
     env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
                     enemies=[enemies[0]],
                     playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons, normalization_method), # you can insert your own controller here
+                    player_controller=player_controller(n_hidden_neurons), # you can insert your own controller here
                     enemymode="static",
                     level=2,
                     speed="normal",
                     visuals=True,
-                    randomini=randomini_test)
+                    randomini="no")
     env.player_controller.env = env
 
     def print_result(f, p, e, t):
@@ -444,28 +399,12 @@ def run_test(config, randomini_test="no", multi_ini_test=False, based_on_eval_be
         print(win_str)
 
     total_gain = 0
-    if not multi_ini_test:
-        for enemy in enemies:
-            env.enemies = [enemy]
-            print(f'Running enemy {enemy}')
-            f,p,e,t = env.play(pcont=best_solution)
-            print_result(f, p, e, t)
-            total_gain += p-e
-    else:
-        for enemy in enemies:
-            env.enemies = [enemy]
-            print(f'Running enemy {enemy}')
-            enemy_positions = ENEMY_POSITIONS[enemy]
-
-            gain_ = 0
-            for enemy_position in enemy_positions:
-                env.player_controller.x_dist = enemy_position
-                
-                f,p,e,t = env.play(pcont=best_solution)
-                print_result(f, p, e, t)
-                gain_ += p-e
-            total_gain += gain_ / len(enemy_positions)
-
+    for enemy in enemies:
+        env.enemies = [enemy]
+        print(f'Running enemy {enemy}')
+        f,p,e,t = env.play(pcont=best_solution)
+        print_result(f, p, e, t)
+        total_gain += p-e
     print(f'Total gain: {total_gain}')
 
     
@@ -475,23 +414,18 @@ if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
         "enemies":              [3],                # [1, 2, 3, 4, 5, 6, 7, 8]
-        "randomini":            "no",               # "yes", "no"
-        "multi_ini":            False,               # True, False
-        "normalization_method": "default",  # "default", "domain_specific", "around_0"
-        "fitness_method":       "default",         # "default", "balanced", "rank"
+        "fitness_method":       "rank",         # "default", "balanced", "rank"
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
         "crossover_method":     "none",     # "none", "default", "ensemble"
         "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
         "gens":                 30,
-        "n_hidden_neurons":     10,
         "pop_size":             100,
     }
 
-    config["experiment_name"] = f'{config["enemies"]}_{config["n_hidden_neurons"]}_inp-norm-{config["normalization_method"]}_f-{config["fitness_method"]}'
+    config["experiment_name"] = f'{config["enemies"]}_f-{config["fitness_method"]}_mut-{config["mutation_type"]}'
 
     RUN_EVOLUTION = True
-    RANDOMINI_TEST = "yes"
 
     # Track time
     if RUN_EVOLUTION:
@@ -501,4 +435,4 @@ if __name__ == '__main__':
         print(f'\nTotal runtime: {round((time.time() - start_time) / 60, 2)} minutes')
         print(f'Total runtime: {round((time.time() - start_time), 2)} seconds')
     else:
-        run_test(config, randomini_test=RANDOMINI_TEST)
+        run_test(config)

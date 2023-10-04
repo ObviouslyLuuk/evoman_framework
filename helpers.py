@@ -140,10 +140,7 @@ def load_population(domain_lower,
     else:
         print('Initializing new population...')
         # Initialize population
-        if crossover_method == "ensemble":
-            pop = np.random.uniform(domain_lower, domain_upper, (pop_size, 2, n_vars))
-        else:
-            pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
+        pop = np.random.uniform(domain_lower, domain_upper, (pop_size, n_vars))
         # Eval
         pfit = eval_fn(env, pop)
         if fitness_method == "rank":

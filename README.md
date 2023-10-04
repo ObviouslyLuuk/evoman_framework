@@ -19,6 +19,14 @@ Questions:
 - In the slides (workshop-standardassigment-2023.pdf) it says on slide 21 that the metric to be shown in the boxplots is energy for task I and gain/number of defeats for task II, but in the FAQ the answer to question 24 says you should use the measure that was used to select individuals (this seems to make less sense because the measure might be different per method, thus making the results incomparable)
 
 Notes:
+- what if we have two islands, one where each 10 generations (because usually most of the progress is made in the first 10-15 generations) there's a complete reset,
+    where the best individuals are carried over to the other island if they're good enough (as a separate species), and then a new population is initialized.
+    The other island thus has the best individuals, and can maintain diversity because there's separate species.
+- could be an idea to track where the best fitness solution came from
+    - in which generation was it added
+    - in which generations was it mutated
+    - which parents did it crossover from etc
+    this could give some insight into what works and what doesn't
 - could be useful tracking the duplicate fitness scores to see how diverse the population is
 - look into randomini in the environment, for evolving?
     - this is interesting. Evolving with randomini does way worse. Maybe because the fittest individuals might be complete shit in the next gen, so there's too much
@@ -34,7 +42,7 @@ inputs are limited in the following ways:
 Todo:
 - make plot legends and text larger
 
-Log:
+Task I Log:
 - changed input normalization
 - changed fitness function
 - parent selection multinomial (fitness proportionate selection) seems to do better than greedy and tournament
@@ -42,3 +50,14 @@ Log:
 - tried crossover like described in the multi_evolution baseline paper, and also an ensemble crossover method, but didn't improve
 - implemented adaptive decaying mutation noise based on average fitness of the population
 - experimented with evaluating each individual on multiple enemy positions, this improves randomini performance obviously
+
+Task II enemies:
+- enemy 1: not essential because it only learns to jump and shoot
+- enemy 2: not essential because it's the easiest
+- enemy 3: maybe, it learns to dodge bullets
+- enemy 4: maybe, it learns to dodge the enemy at all times
+- enemy 5: not essential because it's the easiest
+- enemy 6: maybe, it learns to dodge the enemy mostly, but weird movement
+- enemy 7: maybe, only enemy with different physics and ceiling spikes
+- enemy 8: not essential because it's very easy
+
