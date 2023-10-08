@@ -308,7 +308,6 @@ def main(
                     speed="fastest",
                     visuals=visuals,
                     randomini="no")
-    env.player_controller.env = env
 
     # number of weights for multilayer with 10 hidden neurons
     if n_hidden_neurons > 0:
@@ -346,10 +345,7 @@ def main(
         save_results(use_folder, results_dict, kwarg_dict)
     
         # Save best individual
-        if crossover_method == "ensemble":
-            np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', np.mean(pop[best_idx], axis=0))
-        else:
-            np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
+        np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
         
         # Save environment
         if fitness_method == "rank":

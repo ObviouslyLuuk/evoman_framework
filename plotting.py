@@ -52,7 +52,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     else:
         for df in dfs:
             plt.plot(df[f'best_{fitness_method}'], color='green', alpha=0.3)
-            plt.plot(df[f'mean_{fitness_method}'], color='green', linestyle='dashed', alpha=0.3)
+            # plt.plot(df[f'mean_{fitness_method}'], color='green', linestyle='dashed', alpha=0.3)
 
     if folders2:
         dfs = []
@@ -73,7 +73,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         else:
             for df in dfs:
                 plt.plot(df[f'best_{fitness_method}'], color='blue', alpha=0.3)
-                plt.plot(df[f'mean_{fitness_method}'], color='blue', linestyle='dashed', alpha=0.3)
+                # plt.plot(df[f'mean_{fitness_method}'], color='blue', linestyle='dashed', alpha=0.3)
 
         # Add legend
         methods = list(variable.values())[0]

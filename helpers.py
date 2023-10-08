@@ -86,32 +86,32 @@ def find_folder(config):
 
 
 
-def find_folders(config):
+def find_folders(config, results_dir=RESULTS_DIR):
     """Return list of folders that agrees with the given config."""
-    folders = [f for f in os.listdir(RESULTS_DIR) if os.path.isdir(f"{RESULTS_DIR}/{f}")]
+    folders = [f for f in os.listdir(results_dir) if os.path.isdir(f"{results_dir}/{f}")]
 
     # Get folders that agree with config
-    folders = compare_configs(folders, config=config, results_dir=RESULTS_DIR)
+    folders = compare_configs(folders, config=config, results_dir=results_dir)
 
     if len(folders) == 0:
         print('No folders found with given config')
     return folders
 
-def get_best(config, based_on_eval_best=None):
+def get_best(config, based_on_eval_best=None, results_dir=RESULTS_DIR, use_key='best_balanced'):
     """
     Returns the folder with the best fitness for the given config.
     based_on_eval_best: If None, use config.json, if '' or '_multi-ini' or '_randomini' use eval_best{}.json
     """
-    folders = find_folders(config)
+    folders = find_folders(config, results_dir=results_dir)
     fitness_by_folder = {}
     for folder in folders:
         if based_on_eval_best is None:
-            with open(f'{RESULTS_DIR}/{folder}/config.json', 'r') as f:
+            with open(f'{results_dir}/{folder}/config.json', 'r') as f:
                 config = json.load(f)
-            best_fitness = config['best_balanced']
+            best_fitness = config[use_key]
             fitness_by_folder[folder] = best_fitness
         else:
-            with open(f'{RESULTS_DIR}/{folder}/eval_best{based_on_eval_best}.json', 'r') as f:
+            with open(f'{results_dir}/{folder}/eval_best{based_on_eval_best}.json', 'r') as f:
                 saved = json.load(f)
             best_fitness = saved['results'][0]['gain']
             fitness_by_folder[folder] = best_fitness
