@@ -6,18 +6,15 @@
 ###############################################################################
 
 # imports framework
-import sys
-import pandas as pd
 import time
 import json
 
 from evoman.environment import Environment
 from demo_controller import player_controller
-from helpers import save_results, load_population, find_folder, find_folders, RESULTS_DIR, get_best, ENEMY_POSITIONS, get_random_str
+from helpers import save_results, load_population, find_folder, RESULTS_DIR, get_best, get_random_str
 
 # imports other libs
 import numpy as np
-from numpy import sqrt, exp
 from scipy.stats import rankdata
 import os
 
