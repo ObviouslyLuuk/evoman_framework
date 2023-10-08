@@ -1,8 +1,4 @@
-###############################################################################
-# EvoMan FrameWork - V1.0 2016  			                                  #
-# Author: Karine Miras        			                                      #
-# karine.smiras@gmail.com     				                                  #
-###############################################################################
+# Does not work but no idea why because the implementation seems identical to the class version
 
 # imports framework
 import pandas as pd
