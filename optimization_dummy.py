@@ -23,8 +23,9 @@ import os
 
 def fitness_balanced(player_life, enemy_life, time):
     """Returns a balanced fitness, based on the player life, enemy life and time"""
-    if type(time) not in [int, float] or time+1 <= 0:
+    if type(time) not in [int, float, np.float64] or time+1 <= 0:
         print(f"Time invalid: {time} of type {type(time)}")
+        time = 3000
     return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
 
 def simulation(env, x):
