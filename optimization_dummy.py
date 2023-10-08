@@ -23,6 +23,8 @@ import os
 
 def fitness_balanced(player_life, enemy_life, time):
     """Returns a balanced fitness, based on the player life, enemy life and time"""
+    if type(time) != int or time < 0:
+        print(f"Time invalid: {time}")
     return .5*(100-enemy_life) + .5*player_life - np.log(time+1)
 
 def simulation(env, x):
@@ -119,7 +121,7 @@ def select_survivors(pfit, survivor_method):
     if survivor_method == 'greedy':
         idx = np.argsort(pfit)[::-1][:int(len(pfit)/2)]
     elif survivor_method == 'multinomial':
-        pfit_norm = normalize_pop_fitness(pfit)
+        pfit_norm = normalize_pop_fitness(pfit) + 1e-6 # Add small number to avoid probabilities of 0
         probs = pfit_norm / np.sum(pfit_norm)
         idx = np.random.choice(len(pfit), size=int(len(pfit)/2), p=probs, replace=False)
         idx[0] = np.argmax(pfit) # Keep best
