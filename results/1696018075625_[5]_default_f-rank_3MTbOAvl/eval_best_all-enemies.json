@@ -1,0 +1,90 @@
+{
+    "gen": 29,
+    "enemies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+    ],
+    "results": [
+        {
+            "gain": -172.6,
+            "fitness": 21.214210054490458,
+            "fitness_balanced": 14.527729326328526,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -172.6,
+            "fitness": 21.214210054490458,
+            "fitness_balanced": 14.527729326328526,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -172.6,
+            "fitness": 21.214210054490458,
+            "fitness_balanced": 14.527729326328526,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -172.6,
+            "fitness": 21.214210054490458,
+            "fitness_balanced": 14.527729326328526,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -172.6,
+            "fitness": 21.214210054490458,
+            "fitness_balanced": 14.527729326328526,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        }
+    ]
+}

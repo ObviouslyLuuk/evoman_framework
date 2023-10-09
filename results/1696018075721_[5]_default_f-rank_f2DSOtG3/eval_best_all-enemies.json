@@ -1,0 +1,90 @@
+{
+    "gen": 29,
+    "enemies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+    ],
+    "results": [
+        {
+            "gain": -277.2,
+            "fitness": 6.63033209893279,
+            "fitness_balanced": 9.544678884642298,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -277.2,
+            "fitness": 6.63033209893279,
+            "fitness_balanced": 9.544678884642298,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -277.2,
+            "fitness": 6.63033209893279,
+            "fitness_balanced": 9.544678884642298,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -277.2,
+            "fitness": 6.63033209893279,
+            "fitness_balanced": 9.544678884642298,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        },
+        {
+            "gain": -277.2,
+            "fitness": 6.63033209893279,
+            "fitness_balanced": 9.544678884642298,
+            "wins": [
+                false,
+                false,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false
+            ]
+        }
+    ]
+}

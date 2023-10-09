@@ -12,8 +12,11 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     Data is aggregated from all the experiment's runs in different folders. Thus the lines are averaged over all runs.
     """
     if not folders1:
-        print('No folders given')
-        return
+        if folders2:
+            folders1 = folders2
+        else:
+            print('No folders given')
+            return
     
     enemies = None
 
@@ -42,6 +45,9 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     })
     aggr_df = aggr_df.iloc[:min_len] # Clip to shortest df
     
+    methods = ['']
+    if folders2:
+        methods = list(variable.values())[0]
     # Plot gen vs best fitness
     plt.figure(figsize=figsize)
     if not plot_separate_lines:
@@ -51,7 +57,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='green')
     else:
         for df in dfs:
-            plt.plot(df[f'best_{fitness_method}'], color='green', alpha=0.3)
+            plt.plot(df[f'best_{fitness_method}'], color='green', alpha=0.3, label=f'Best {methods[0]}')
             # plt.plot(df[f'mean_{fitness_method}'], color='green', linestyle='dashed', alpha=0.3)
 
     if folders2:
@@ -72,24 +78,23 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='blue')
         else:
             for df in dfs:
-                plt.plot(df[f'best_{fitness_method}'], color='blue', alpha=0.3)
+                plt.plot(df[f'best_{fitness_method}'], color='blue', alpha=0.3, label=f'Best {methods[1]}')
                 # plt.plot(df[f'mean_{fitness_method}'], color='blue', linestyle='dashed', alpha=0.3)
 
         # Add legend
-        methods = list(variable.values())[0]
         if not plot_separate_lines:
             plt.legend(
                 [f'Avg Best {methods[0]}', f'Avg Mean {methods[0]}', f'Best Std {methods[0]}', f'Mean Std {methods[0]}', f'Avg Best {methods[1]}', f'Avg Mean {methods[1]}', f'Best Std {methods[1]}', f'Mean Std {methods[1]}'],
                 bbox_to_anchor=(1.05, 1), loc='upper left'
             )
         else:
-            plt.legend([methods[0], methods[1]], bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     else:
         # Add legend
         if not plot_separate_lines:
             plt.legend(['Avg Best', 'Avg Mean', 'Best Std', 'Mean Std'])
         else:
-            plt.legend(['Best', 'Mean'])
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
     plt.title(f'Fitness by generation - Enemy {enemies}')
     plt.xlabel('Generation')

@@ -357,7 +357,7 @@ def main(
     env.state_to_log() # checks environment state
 
 
-def run_test(config, based_on_eval_best=None):
+def run_test(config, based_on_eval_best=None, test_all_enemies=False):
     """Run the best solution for the given config"""
     enemies = config['enemies']
 
@@ -375,6 +375,22 @@ def run_test(config, based_on_eval_best=None):
     print(f'Best default  fitness: {config["best_default"]}')
     if "best_balanced" in config:
         print(f'Best balanced fitness: {config["best_balanced"]}')
+    if os.path.exists(f'{RESULTS_DIR}/{folder}/eval_best.json'):
+        with open(f'{RESULTS_DIR}/{folder}/eval_best.json', 'r') as f:
+            eval_best = json.load(f)
+        print(f'Eval Gain: {eval_best["results"][0]["gain"]}')
+        print(f'Eval Default Fitness: {eval_best["results"][0]["fitness"]}')
+        print(f'Eval Fitness Balanced: {eval_best["results"][0]["fitness_balanced"]}')
+        print(f'Eval wins: {sum(eval_best["results"][0]["wins"])} / {len(eval_best["results"][0]["wins"])}')
+    if os.path.exists(f'{RESULTS_DIR}/{folder}/eval_best_all-enemies.json'):
+        with open(f'{RESULTS_DIR}/{folder}/eval_best_all-enemies.json', 'r') as f:
+            eval_best = json.load(f)
+        print("All Enemies:")
+        print(f'Eval Gain: {eval_best["results"][0]["gain"]}')
+        print(f'Eval Default Fitness: {eval_best["results"][0]["fitness"]}')
+        print(f'Eval Fitness Balanced: {eval_best["results"][0]["fitness_balanced"]}')
+        win_indices = np.where(np.array(eval_best["results"][0]["wins"]) == True)[0] + 1
+        print(f'Eval wins: {sum(eval_best["results"][0]["wins"])} / {len(eval_best["results"][0]["wins"])} {win_indices}')
 
     env = Environment(experiment_name=f'{RESULTS_DIR}/{folder}',
                     enemies=[enemies[0]],
@@ -395,6 +411,8 @@ def run_test(config, based_on_eval_best=None):
         print(win_str)
 
     total_gain = 0
+    if test_all_enemies:
+        enemies = [1,2,3,4,5,6,7,8]
     for enemy in enemies:
         env.enemies = [enemy]
         print(f'Running enemy {enemy}')

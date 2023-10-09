@@ -26,6 +26,8 @@ if __name__ == '__main__':
 
     RUN_EVOLUTION = args.run_evolution
 
+    ALL_ENEMIES_TEST = True
+
     runs_per_experiment = args.n_runs
     if not RUN_EVOLUTION:
         runs_per_experiment = 1
@@ -74,4 +76,6 @@ if __name__ == '__main__':
                     "enemies": enemies,
                 }
                 based_on_eval_best = ''
-                run_test(config, based_on_eval_best=based_on_eval_best)
+                if ALL_ENEMIES_TEST:
+                    based_on_eval_best = '_all-enemies'
+                run_test(config, based_on_eval_best=based_on_eval_best, test_all_enemies=ALL_ENEMIES_TEST)

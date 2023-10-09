@@ -1,0 +1,90 @@
+{
+    "gen": 29,
+    "enemies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+    ],
+    "results": [
+        {
+            "gain": -77.99999999999919,
+            "fitness": 35.764219143011346,
+            "fitness_balanced": 56.31946701359942,
+            "wins": [
+                false,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "gain": -77.99999999999919,
+            "fitness": 35.764219143011346,
+            "fitness_balanced": 56.31946701359942,
+            "wins": [
+                false,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "gain": -77.99999999999919,
+            "fitness": 35.764219143011346,
+            "fitness_balanced": 56.31946701359942,
+            "wins": [
+                false,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "gain": -77.99999999999919,
+            "fitness": 35.764219143011346,
+            "fitness_balanced": 56.31946701359942,
+            "wins": [
+                false,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "gain": -77.99999999999919,
+            "fitness": 35.764219143011346,
+            "fitness_balanced": 56.31946701359942,
+            "wins": [
+                false,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                true
+            ]
+        }
+    ]
+}

@@ -111,6 +111,9 @@ def get_best(config, based_on_eval_best=None, results_dir=RESULTS_DIR, use_key='
             best_fitness = config[use_key]
             fitness_by_folder[folder] = best_fitness
         else:
+            if not os.path.exists(f'{results_dir}/{folder}/eval_best{based_on_eval_best}.json'):
+                print(f'No eval_best{based_on_eval_best}.json for {folder}, skipping...')
+                continue
             with open(f'{results_dir}/{folder}/eval_best{based_on_eval_best}.json', 'r') as f:
                 saved = json.load(f)
             best_fitness = saved['results'][0]['gain']
