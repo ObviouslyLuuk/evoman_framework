@@ -29,5 +29,6 @@
     "mean_balanced": 50.189481637370335,
     "std_balanced": 28.898145425473867,
     "Q5_balanced": 23.931439335446246,
-    "Q95_balanced": 94.91240366476762
+    "Q95_balanced": 94.91240366476762,
+    "exploration_island": false
 }

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind
 from helpers import RESULTS_DIR
 
-def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, fitness_method="default", plot_separate_lines=False):
+def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, fitness_method="default", plot_separate_lines=False, exploration_island=False):
     """
     Creates a plot of the fitness vs generation for the given folder.
     One line for the average best fitness, one for the average mean fitness and a band for the standard deviation of both.
@@ -19,6 +19,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             return
     
     enemies = None
+    exploration_gens = None
 
     dfs = []
     for folder in folders1:
@@ -29,6 +30,8 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             with open(f'{results_dir}/{folder}/config.json', 'r') as f:
                 saved_config = json.load(f)
             enemies = saved_config['enemies']
+        if exploration_island and saved_config['exploration_island'] and not exploration_gens:
+            exploration_gens = saved_config['exploration_gens']
 
     # Get shortest df
     min_len = min([len(df) for df in dfs])
@@ -95,6 +98,11 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             plt.legend(['Avg Best', 'Avg Mean', 'Best Std', 'Mean Std'])
         else:
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    if exploration_gens:
+        # Make vertical dotted lines at each exploration merge, where each merge happens at gen % exploration_merge == 0
+        for i in range(0, len(aggr_df), exploration_gens):
+            plt.axvline(x=i, color='black', linestyle='dotted')
 
     plt.title(f'Fitness by generation - Enemy {enemies}')
     plt.xlabel('Generation')

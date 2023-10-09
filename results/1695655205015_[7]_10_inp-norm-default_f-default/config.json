@@ -21,5 +21,6 @@
     "mutation_type": "normal",
     "best_default": 89.48661051127252,
     "mean_default": 83.19498190095985,
-    "std_default": 13.553665277098776
+    "std_default": 13.553665277098776,
+    "exploration_island": false
 }

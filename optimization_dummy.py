@@ -250,6 +250,8 @@ def main(
         crossover_method = "none",
         mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
         start_new = False,
+        exploration_island = False,
+        exploration_gens = 10,
 ):
     # Remove old options
     if multi_ini:
@@ -315,31 +317,94 @@ def main(
     else:
         n_vars = (env.get_num_sensors()+1)*5
 
+
     # Load population
     pop, pfit = load_population(domain_lower, domain_upper, pop_size, n_vars, env, evaluate, fitness_method, use_folder, continue_evo=start_gen>0)
 
+    main_pop_size = pop_size
+    if exploration_island:
+        # Assert that pop_size is even
+        assert pop_size % 2 == 0, "Population size must be even for exploration island"
+        main_pop_size = int(pop_size/2)
+        # Define exploration population
+        pop_explore = pop[main_pop_size:]
+        pfit_explore = {
+            "default": pfit["default"][main_pop_size:],
+            "balanced": pfit["balanced"][main_pop_size:],
+        }
+
     # For each generation
     for gen in range(start_gen, gens):
+        # Merge exploration population with main population
+        if exploration_island and gen % exploration_gens == 0 and gen > 0:
+            # Select survivors
+            idx = select_survivors(pfit["default"], survivor_method)
+            pop = pop[idx]
+            pfit = {
+                "default": pfit["default"][idx],
+                "balanced": pfit["balanced"][idx],
+            }
+            # Reset exploration population
+            pop_explore = np.random.uniform(domain_lower, domain_upper, size=(main_pop_size, *pop.shape[1:]))
+            pfit_explore = evaluate(env, pop_explore)
+
+        pop = pop[:main_pop_size] # This is the full population size if exploration_island is False, otherwise it's half the population size
+        pfit = {
+            "default": pfit["default"][:main_pop_size],
+            "balanced": pfit["balanced"][:main_pop_size],
+        }
+        print(len(pop), len(pop_explore))
+
+        results_dict = {
+            'gen': gen,
+        }
         # Perform one step of evolution
         pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
                                    pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
-                                )
-        
+        )
         # Get stats
         if fitness_method == "rank":
             best_idx    = np.argmax(pfit["default"])
         else:
             best_idx    = np.argmax(pfit[fitness_method])
 
-        results_dict = {
-            'gen': gen,
-        }
         for key in pfit:
             results_dict[f'best_{key}'] = pfit[key][best_idx]
             results_dict[f'mean_{key}'] = np.mean(pfit[key])
             results_dict[f'std_{key}'] = np.std(pfit[key])
             results_dict[f'Q5_{key}'] = np.quantile(pfit[key], 0.05)
             results_dict[f'Q95_{key}'] = np.quantile(pfit[key], 0.95)
+
+        if exploration_island:
+            # Perform one step of evolution for exploration population
+            pop_explore, pfit_explore = evolution_step(env, pop_explore, pfit_explore, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
+                                   pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
+            )
+            # Get stats for exploration population
+            if fitness_method == "rank":
+                best_idx    = np.argmax(pfit_explore["default"])
+            else:
+                best_idx    = np.argmax(pfit_explore[fitness_method])
+
+            for key in pfit:
+                results_dict[f'best_{key}_explore'] = pfit_explore[key][best_idx]
+                results_dict[f'mean_{key}_explore'] = np.mean(pfit_explore[key])
+                results_dict[f'std_{key}_explore'] = np.std(pfit_explore[key])
+                results_dict[f'Q5_{key}_explore'] = np.quantile(pfit_explore[key], 0.05)
+                results_dict[f'Q95_{key}_explore'] = np.quantile(pfit_explore[key], 0.95)
+
+            # Combine populations temporarily for saving
+            pop = np.vstack((pop, pop_explore))
+            pfit = {
+                "default": np.append(pfit["default"], pfit_explore["default"]),
+                "balanced": np.append(pfit["balanced"], pfit_explore["balanced"]),
+            }
+
+            # Get overall best from both populations
+            if fitness_method == "rank":
+                best_idx    = np.argmax(pfit["default"])
+            else:
+                best_idx    = np.argmax(pfit[fitness_method])
         
         # Save results
         save_results(use_folder, results_dict, kwarg_dict)
@@ -427,17 +492,19 @@ def run_test(config, based_on_eval_best=None, test_all_enemies=False):
 if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
-        "enemies":              [3],                # [1, 2, 3, 4, 5, 6, 7, 8]
+        "enemies":              [4],                # [1, 2, 3, 4, 5, 6, 7, 8]
         "fitness_method":       "rank",         # "default", "balanced", "rank"
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
         "crossover_method":     "none",     # "none", "default", "ensemble"
         "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
-        "gens":                 30,
+        "exploration_island":   True,
+        "exploration_gens":     10,
+        "gens":                 100,
         "pop_size":             100,
     }
 
-    config["experiment_name"] = f'{config["enemies"]}_f-{config["fitness_method"]}_mut-{config["mutation_type"]}'
+    config["experiment_name"] = f'{config["enemies"]}_e-{config["exploration_island"]}_f-{config["fitness_method"]}_mut-{config["mutation_type"]}'
 
     RUN_EVOLUTION = True
 
