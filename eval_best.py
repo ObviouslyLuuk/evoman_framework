@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     test_n = 5
 
-    all_enemies_values = [False, True]
+    all_enemies_values = [False, True] # False should be first if running both (because we copy eval_best.json to eval_best_all-enemies.json if enemies == [1, 2, 3, 4, 5, 6, 7, 8])
     randomini_values = ["no"]
     multi_ini_values = [False]
 
@@ -125,6 +125,10 @@ if __name__ == "__main__":
                         if gen == saved["gen"] and saved["enemies"] == enemies:
                             print(f"Skipping {folder} because already evaluated gen {gen} with enemies {enemies}")
                             continue
+                        else:
+                            print(f"Re-evaluating {folder} because gen {gen} or enemies {enemies} doesn't match saved gen {saved['gen']} and enemies {saved['enemies']}")
+                    else:
+                        print(f"Evaluating {folder} because no eval_best{add_str}.json exists")
 
                     test_results = {"gen": gen, "enemies": enemies, "results": []}
                     for i in range(use_n):
