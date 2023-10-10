@@ -353,7 +353,6 @@ def main(
             "default": pfit["default"][:main_pop_size],
             "balanced": pfit["balanced"][:main_pop_size],
         }
-        print(len(pop), len(pop_explore))
 
         results_dict = {
             'gen': gen,

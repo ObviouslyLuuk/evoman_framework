@@ -12,6 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('--survivor_method',        type=str, default='multinomial', help='usage: --survivor_method greedy/multinomial/tournament')
     parser.add_argument('--crossover_method',       type=str, default='none',       help='usage: --crossover_method none/default')
     parser.add_argument('--mutation_type',          type=str, default='normal',     help='usage: --mutation_type normal/stochastic_decaying')
+    parser.add_argument('--exploration_island',     dest='exploration_island', action='store_true') # this means --exploration_island is True if included
     
     parser.add_argument('--start_new',              dest='start_new',       action='store_true') # this means --start_new is True if included
     parser.add_argument('--enemy_sets',             type=str, default='1,2,3,4,5,6,7,8',   help='usage: --enemy_sets 1,2,3,4,5,6,7,8/12,13/1')
@@ -27,6 +28,7 @@ if __name__ == '__main__':
     RUN_EVOLUTION = args.run_evolution
 
     ALL_ENEMIES_TEST = True
+    SHOW_ALL_ENEMIES = False
 
     runs_per_experiment = args.n_runs
     if not RUN_EVOLUTION:
@@ -44,7 +46,8 @@ if __name__ == '__main__':
                 "survivor_method":      args.survivor_method,      # "greedy", "multinomial", "tournament"
                 "crossover_method":     args.crossover_method,     # "none", "default"
                 "mutation_type":        args.mutation_type,        # "normal", "stochastic_decaying"
-                "gens":                 100,
+                "exploration_island":   args.exploration_island,   # True, False
+                "gens":                 300,
                 "pop_size":             100,
                 "start_new":            args.start_new,            # True, False
             }
@@ -74,8 +77,9 @@ if __name__ == '__main__':
             else:
                 config = {
                     "enemies": enemies,
+                    # "fitness_method": "balanced"
                 }
                 based_on_eval_best = ''
                 if ALL_ENEMIES_TEST:
                     based_on_eval_best = '_all-enemies'
-                run_test(config, based_on_eval_best=based_on_eval_best, test_all_enemies=ALL_ENEMIES_TEST)
+                run_test(config, based_on_eval_best=based_on_eval_best, test_all_enemies=ALL_ENEMIES_TEST and SHOW_ALL_ENEMIES)

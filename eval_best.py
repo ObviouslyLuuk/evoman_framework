@@ -32,6 +32,7 @@ def run_test(folder, enemies=None, randomini_test="no", multi_ini_test=False, re
 
     gains = []
     fs = []
+    fs_balanced = []
     wins = []
     for enemy in enemies:
         env.enemies = [enemy]
@@ -40,33 +41,39 @@ def run_test(folder, enemies=None, randomini_test="no", multi_ini_test=False, re
             f,p,e,t = env.play(pcont=best_solution)
             gains.append(p-e)
             fs.append(f)
+            fs_balanced.append(fitness_balanced(p, e, t))
             wins.append(e<=0)
         else:
             enemy_positions = ENEMY_POSITIONS[enemy]
 
             gain_ = 0
             fs_ = []
+            fs_balanced_ = []
             wins_ = []
             for enemy_position in enemy_positions:
                 env.player_controller.x_dist = enemy_position
                 f,p,e,t = env.play(pcont=best_solution)
                 gain_ += p-e
                 fs_.append(f)
+                fs_balanced_.append(fitness_balanced(p, e, t))
                 wins_.append(e<=0)
             print(len(fs_))
             gains.append(gain_ / len(enemy_positions))
             fs.append(np.mean(fs_))
+            fs_balanced.append(np.mean(fs_balanced_))
             wins.append(np.mean(wins_))
 
 
     fitness = fs[0]
+    f_balanced = fs_balanced[0]
     if len(enemies) > 1:
         fitness = np.mean(fs) - np.std(fs)
+        f_balanced = np.mean(fs_balanced) - np.std(fs_balanced)
 
     return {
-        "gain": np.sum(gains),
+        "gain": float(np.sum(gains)),
         "fitness": fitness,
-        "fitness_balanced": fitness_balanced(p, e, t),
+        "fitness_balanced": f_balanced,
         "gains": gains,
         "wins": wins,
     }
@@ -121,7 +128,12 @@ if __name__ == "__main__":
                     # Skip run if already eval_best.json for the config and latest generation
                     if os.path.exists(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json"):
                         with open(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json", "r") as f:
-                            saved = json.load(f)
+                            try:
+                                saved = json.load(f)
+                            except:
+                                print(f"Error in {folder}/eval_best{add_str}.json: ")
+                                print(f.read())
+                                continue
                         if gen == saved["gen"] and saved["enemies"] == enemies:
                             print(f"Skipping {folder} because already evaluated gen {gen} with enemies {enemies}")
                             continue
@@ -135,4 +147,9 @@ if __name__ == "__main__":
                         test_results["results"].append(run_test(folder, enemies=enemies, randomini_test=randomini_test, multi_ini_test=multi_ini_test, results_dir=RESULTS_DIR))
                 
                     with open(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json", "w") as f:
-                        json.dump(test_results, f, indent=4)
+                        try:
+                            json.dump(test_results, f, indent=4)
+                        except:
+                            print(f"Error when writing {folder}/eval_best{add_str}.json: ")
+                            print(test_results)
+                            continue

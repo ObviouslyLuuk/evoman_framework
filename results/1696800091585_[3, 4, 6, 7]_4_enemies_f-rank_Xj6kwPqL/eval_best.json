@@ -10,7 +10,13 @@
         {
             "gain": -40.0,
             "fitness": 74.84949999525111,
-            "fitness_balanced": 39.28957298262513,
+            "fitness_balanced": 38.847291682009356,
+            "gains": [
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0
+            ],
             "wins": [
                 false,
                 false,
@@ -21,7 +27,13 @@
         {
             "gain": -40.0,
             "fitness": 74.84949999525111,
-            "fitness_balanced": 39.28957298262513,
+            "fitness_balanced": 38.847291682009356,
+            "gains": [
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0
+            ],
             "wins": [
                 false,
                 false,
@@ -32,7 +44,13 @@
         {
             "gain": -40.0,
             "fitness": 74.84949999525111,
-            "fitness_balanced": 39.28957298262513,
+            "fitness_balanced": 38.847291682009356,
+            "gains": [
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0
+            ],
             "wins": [
                 false,
                 false,
@@ -43,7 +61,13 @@
         {
             "gain": -40.0,
             "fitness": 74.84949999525111,
-            "fitness_balanced": 39.28957298262513,
+            "fitness_balanced": 38.847291682009356,
+            "gains": [
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0
+            ],
             "wins": [
                 false,
                 false,
@@ -54,7 +78,13 @@
         {
             "gain": -40.0,
             "fitness": 74.84949999525111,
-            "fitness_balanced": 39.28957298262513,
+            "fitness_balanced": 38.847291682009356,
+            "gains": [
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0
+            ],
             "wins": [
                 false,
                 false,

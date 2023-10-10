@@ -10,7 +10,13 @@
         {
             "gain": -60.0,
             "fitness": 66.51221304530291,
-            "fitness_balanced": 34.6109282701835,
+            "fitness_balanced": 34.50299167121473,
+            "gains": [
+                -20.0,
+                -10.0,
+                -10.0,
+                -20.0
+            ],
             "wins": [
                 false,
                 false,
@@ -21,7 +27,13 @@
         {
             "gain": -60.0,
             "fitness": 66.51221304530291,
-            "fitness_balanced": 34.6109282701835,
+            "fitness_balanced": 34.50299167121473,
+            "gains": [
+                -20.0,
+                -10.0,
+                -10.0,
+                -20.0
+            ],
             "wins": [
                 false,
                 false,
@@ -32,7 +44,13 @@
         {
             "gain": -60.0,
             "fitness": 66.51221304530291,
-            "fitness_balanced": 34.6109282701835,
+            "fitness_balanced": 34.50299167121473,
+            "gains": [
+                -20.0,
+                -10.0,
+                -10.0,
+                -20.0
+            ],
             "wins": [
                 false,
                 false,
@@ -43,7 +61,13 @@
         {
             "gain": -60.0,
             "fitness": 66.51221304530291,
-            "fitness_balanced": 34.6109282701835,
+            "fitness_balanced": 34.50299167121473,
+            "gains": [
+                -20.0,
+                -10.0,
+                -10.0,
+                -20.0
+            ],
             "wins": [
                 false,
                 false,
@@ -54,7 +78,13 @@
         {
             "gain": -60.0,
             "fitness": 66.51221304530291,
-            "fitness_balanced": 34.6109282701835,
+            "fitness_balanced": 34.50299167121473,
+            "gains": [
+                -20.0,
+                -10.0,
+                -10.0,
+                -20.0
+            ],
             "wins": [
                 false,
                 false,
