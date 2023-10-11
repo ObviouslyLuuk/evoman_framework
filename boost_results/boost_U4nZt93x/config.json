@@ -1,0 +1,6 @@
+{
+    "crossover": "none",
+    "fitness_method": "sum",
+    "mutation_rate": 0.1,
+    "mut_std": 0.01
+}

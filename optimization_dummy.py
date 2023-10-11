@@ -90,7 +90,7 @@ def pick_parent(pop, pfit, method):
         return pop[np.random.choice(len(pop), p=pfit_distribution)]
     
 
-def mutate(child, mutation_rate):
+def mutate(child, mutation_rate, std=0.1):
     """Mutate child by adding random noise to selection of weights and biases.
     child is a numpy array of weights and biases.
     mutation_rate is the mutation rate."""
@@ -98,7 +98,7 @@ def mutate(child, mutation_rate):
     mask = np.random.rand(*child.shape) < mutation_rate
 
     # Add random noise to weights and biases where mask is True
-    child[mask] += np.random.normal(0, 0.1, size=child.shape)[mask]
+    child[mask] += np.random.normal(0, std, size=child.shape)[mask]
     
     return child
 

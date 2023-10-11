@@ -1,0 +1,8 @@
+{
+    "fitness_method": "mean+min",
+    "mutation_rate": 0.1,
+    "mut_std": 0.05,
+    "eval_select": [
+        3
+    ]
+}
