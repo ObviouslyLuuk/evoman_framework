@@ -300,6 +300,7 @@ def main(
             use_folder += f'_{get_random_str()}'
 
         os.makedirs(f'{RESULTS_DIR}/{use_folder}')
+        os.makedirs(f'{RESULTS_DIR}/{use_folder}/bests')
 
     multi = "no"
     if len(enemies) > 1:
@@ -338,6 +339,10 @@ def main(
             "default": pfit["default"][main_pop_size:],
             "balanced": pfit["balanced"][main_pop_size:],
         }
+
+    best_idx    = np.argmax(pfit["default"])
+    previous_best = pfit["default"][best_idx]
+    np.savetxt(f'{RESULTS_DIR}/{use_folder}/bests/best_0_{previous_best:.2f}.txt', pop[best_idx])
 
     # For each generation
     for gen in range(start_gen, gens):
@@ -417,6 +422,10 @@ def main(
     
         # Save best individual
         np.savetxt(f'{RESULTS_DIR}/{use_folder}/best.txt', pop[best_idx])
+        best_fitness = pfit["default"][best_idx]
+        if best_fitness > previous_best:
+            previous_best = best_fitness
+            np.savetxt(f'{RESULTS_DIR}/{use_folder}/bests/best_{gen+1}_{best_fitness:.2f}.txt', pop[best_idx])
         
         # Save environment
         if fitness_method == "rank":
@@ -508,6 +517,7 @@ if __name__ == '__main__':
         "exploration_gens":     15,
         "gens":                 1000,
         "pop_size":             100,
+        "start_new":            True,            # True, False
     }
 
     config["experiment_name"] = f'{config["enemies"]}_e-{config["exploration_island"]}_f-{config["fitness_method"]}_mut-{config["mutation_type"]}'
