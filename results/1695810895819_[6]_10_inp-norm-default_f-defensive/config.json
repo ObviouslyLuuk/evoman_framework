@@ -25,5 +25,6 @@
     "best_defensive": 41.54661051127274,
     "mean_defensive": 13.537248398602216,
     "std_defensive": 16.245003872542213,
-    "exploration_island": false
+    "exploration_island": false,
+    "exploration_gens": 10
 }

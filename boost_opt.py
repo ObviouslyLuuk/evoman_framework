@@ -78,7 +78,7 @@ def save_pop_info(dir_path, pop, gains):
     df.to_csv(f'{dir_path}/results.csv', index=False)
 
 
-def aggregate_best(results_dir=BOOST_RESULTS_DIR):
+def aggregate_best(results_dir=BOOST_RESULTS_DIR, length=1):
     boost_folders = [f for f in os.listdir(results_dir) if os.path.isdir(os.path.join(results_dir, f))]
     pop_stack = []
     gains_stack = []
@@ -86,7 +86,7 @@ def aggregate_best(results_dir=BOOST_RESULTS_DIR):
         if not (os.path.exists(os.path.join(results_dir, folder, 'best_pop.npy')) and os.path.exists(os.path.join(results_dir, folder, 'best_pop_info.json'))):
             continue
         best_pop, gains = load_best_population(os.path.join(results_dir, folder))
-        if len(best_pop) != 8:
+        if len(best_pop) != length:
             continue
         pop_stack.append(best_pop)
         gains_stack.append(gains)
@@ -106,7 +106,7 @@ def aggregate_best(results_dir=BOOST_RESULTS_DIR):
 
 def load_best_population(
         dir_path,
-        min_beaten=6,
+        min_beaten=8,
         get_results_dir=RESULTS_DIR,
     ):
     # Check for best population in dir_path
@@ -166,6 +166,91 @@ def load_best_population(
     return best_pop, gains
 
 
+def evaluate(pop, env, selection, fitness_method="mean+min", enemies=[1, 2, 3, 4, 5, 6, 7, 8]):
+    # Evaluate population
+    gains_new = np.zeros((len(pop), len(enemies)))
+    for i, individual in enumerate(pop):
+        if i not in selection:
+            gains_new[i] = np.zeros((len(enemies))) -1e6
+            continue
+        for enemy in enemies:
+            env.enemies = [enemy]
+            f,p,e,t = env.play(pcont=individual)
+            gains_new[i][enemy-1] = p-e
+    return gains_new
+
+
+def evolution_step_lookahead(pop, gains, env, max_so_far, fitness_method="sum", mutation_rate=0.1, mut_std=0.1, enemies=[1, 2, 3, 4, 5, 6, 7, 8], eval_select=None, lookahead_width=5, n_lookahead=1):
+    """
+    Run one step of evolution on the given population.
+    """
+    # Copy parents
+    # Create stack of lookahead_width children for each parent
+    children = np.stack([pop.copy() for _ in range(lookahead_width)], axis=0) # Shape (lookahead_width, pop_size, n_weights)
+    children = mutate(children, mutation_rate=mutation_rate, std=mut_std)
+
+    # Only evaluate a selection of the population
+    selection = range(len(pop))
+    if eval_select is not None:
+        selection = eval_select
+
+    if n_lookahead == 0:
+        lookahead_pfit_new = []
+        for i in range(lookahead_width):
+            # Evaluate children
+            gains_new = evaluate(children[i], env, selection, fitness_method=fitness_method, enemies=enemies)
+            pfit_new = fitness_fns[fitness_method](gains_new)
+            lookahead_pfit_new.append(pfit_new)
+        avg_pfit_new = np.mean(np.stack(lookahead_pfit_new), axis=0) # Shape (pop_size)
+        return avg_pfit_new
+    else:
+        lookahead_pfit_new = []
+        for i in range(lookahead_width):
+            avg_pfit_new = evolution_step_lookahead(children[i], gains, env, fitness_method=fitness_method, mut_std=mut_std, mutation_rate=mutation_rate, eval_select=eval_select, lookahead_width=lookahead_width, 
+                                             n_lookahead=n_lookahead-1, enemies=enemies, max_so_far=max_so_far)
+            lookahead_pfit_new.append(avg_pfit_new)
+        lookahead_pfit_new = np.stack(lookahead_pfit_new) # Shape (lookahead_width, pop_size)
+
+    pfit = fitness_fns[fitness_method](gains)
+    fitness_diff = np.round(np.max(lookahead_pfit_new, axis=0) - pfit, 2)[selection].tolist()
+    print(f'Diff in fitness: {fitness_diff}')
+
+    # Get indices of highest fitness children, so one for each axis 1
+    indices = np.argmax(lookahead_pfit_new, axis=0)
+
+    # Get the best individual from each axis 1
+    children = children[indices, np.arange(pop.shape[0])]
+    gains_new = evaluate(pop, env, selection, fitness_method=fitness_method, enemies=enemies)
+
+    pfit_new = fitness_fns[fitness_method](gains_new) + 1e3 # Add large bias for new individuals
+
+    enemies_beaten = np.sum(gains > 0, axis=1)
+    enemies_beaten_new = np.sum(gains_new > 0, axis=1)
+    # If there is a difference in the number of enemies beaten, set the other fitness to something very low
+    pfit[enemies_beaten < enemies_beaten_new] = -1e6
+    pfit_new[enemies_beaten_new < enemies_beaten] = -1e6
+
+    # Set parents and children next to each other
+    combined = np.stack((pfit, pfit_new)) # Shape (2, pop_size)
+
+    # Get indices of highest fitness, so one for each axis 1
+    indices = np.argmax(combined, axis=0)
+
+    # Get the best individual from each axis 1
+    pop = np.stack((pop, children))[indices, np.arange(pop.shape[0])]
+    gains = np.stack((gains, gains_new))[indices, np.arange(pop.shape[0])]
+
+    if np.sum(indices) > 0:
+        print(f'Replacing {np.sum(indices)} parents with children')
+        new_gain = np.sum(gains, axis=1)
+        print(f'New Gain: {np.round(new_gain)[selection]}')
+        if (new_gain > max_so_far).any():
+            beep(sound=1)
+            max_so_far = new_gain
+
+    return pop, gains, max_so_far
+
+
 def evolution_step(pop, gains, env, fitness_method="sum", mutation_rate=0.1, mut_std=0.1, enemies=[1, 2, 3, 4, 5, 6, 7, 8], eval_select=None):
     """
     Run one step of evolution on the given population.
@@ -180,19 +265,15 @@ def evolution_step(pop, gains, env, fitness_method="sum", mutation_rate=0.1, mut
         selection = eval_select
 
     # Evaluate children
-    gains_new = np.zeros((len(pop), len(enemies)))
-    for i, child in enumerate(children):
-        if i not in selection:
-            gains_new[i] = gains[i] -1e6
-            continue
-        for enemy in enemies:
-            env.enemies = [enemy]
-            f,p,e,t = env.play(pcont=child)
-            gains_new[i][enemy-1] = p-e
+    gains_new = evaluate(children, env, selection, fitness_method=fitness_method, enemies=enemies)
 
     pfit = fitness_fns[fitness_method](gains)
     pfit_new = fitness_fns[fitness_method](gains_new)
-    print(f'Diff in fitness: {np.round(pfit_new - pfit, 2)[selection].tolist()}')
+    fitness_diff = np.round(pfit_new - pfit, 2)[selection].tolist()
+    print(f'Diff in fitness: {fitness_diff}')
+    if np.max(fitness_diff) > 0:
+        beep(sound=1)
+    pfit_new += 1e-6 # Add small bias for new individuals
 
     enemies_beaten = np.sum(gains > 0, axis=1)
     enemies_beaten_new = np.sum(gains_new > 0, axis=1)
@@ -208,10 +289,6 @@ def evolution_step(pop, gains, env, fitness_method="sum", mutation_rate=0.1, mut
 
     if np.sum(indices) > 0:
         print(f'Replacing {np.sum(indices)} parents with children')
-
-        # Play noise
-        beep(sound=1)
-
 
     # Get the best individual from each axis 1
     pop = np.stack((pop, children))[indices, np.arange(pop.shape[0])]
@@ -263,15 +340,20 @@ def main(
                     randomini="no")
 
     # Load best population
-    # pop, gains = load_best_population(dir_path, min_beaten=5)
-    pop, gains = aggregate_best(results_dir=results_dir)
+    # pop, gains = load_best_population(dir_path, min_beaten=8)
+    pop, gains = aggregate_best(results_dir=results_dir, length=1)
 
     save_pop_info(dir_path, pop, gains)
+
+    gain = np.sum(gains, axis=1)
+    max_so_far = gain[np.argmax(gain)]
 
     for i in range(gens):
         print(f'Generation {i}/{gens}')
 
         pop, gains = evolution_step(pop, gains, env, fitness_method=fitness_method, mut_std=mut_std, mutation_rate=mutation_rate, eval_select=eval_select)
+        # pop, gains, max_so_far = evolution_step_lookahead(pop, gains, env, max_so_far, fitness_method=fitness_method, mut_std=mut_std, mutation_rate=mutation_rate, eval_select=eval_select,
+        #                                                    lookahead_width=5, n_lookahead=1)
 
         save_pop_info(dir_path, pop, gains)
 
@@ -280,10 +362,10 @@ if __name__ == "__main__":
     main(
         experiment_name='boost',
         gens=500000,
-        fitness_method="mean+min", # "sum", "mean+min"
-        mutation_rate=0.1,
-        mut_std=0.0001,
-        eval_select=[1],
-        # eval_select=None,
+        fitness_method="sum", # "sum", "mean+min"
+        mutation_rate=0.05,
+        mut_std=0.001,
+        # eval_select=[1],
+        eval_select=None,
         results_dir=BOOST_RESULTS_DIR,
     )

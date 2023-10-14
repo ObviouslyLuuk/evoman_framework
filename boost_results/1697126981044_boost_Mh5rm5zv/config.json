@@ -1,0 +1,6 @@
+{
+    "fitness_method": "sum",
+    "mutation_rate": 0.05,
+    "mut_std": 0.001,
+    "eval_select": null
+}

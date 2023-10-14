@@ -30,5 +30,6 @@
     "std_balanced": 8.688041435967131,
     "Q5_balanced": 14.53812718476643,
     "Q95_balanced": 44.37569122953578,
-    "exploration_island": false
+    "exploration_island": false,
+    "exploration_gens": 10
 }

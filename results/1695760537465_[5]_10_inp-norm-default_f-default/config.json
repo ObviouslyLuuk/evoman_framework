@@ -22,5 +22,6 @@
     "best_default": 92.95761329415768,
     "mean_default": 92.41945737874411,
     "std_default": 0.8345866126940092,
-    "exploration_island": false
+    "exploration_island": false,
+    "exploration_gens": 10
 }

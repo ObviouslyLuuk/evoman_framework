@@ -148,7 +148,7 @@ def crossover(parents, crossover_method):
     elif crossover_method == 'none':
         return parents.copy()
 
-def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower):
+def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method, pick_parent_method, survivor_method, crossover_method, dom_upper, dom_lower, exploration_island=False):
     """Perform one step of evolution.
     env is the environment.
     pop is a numpy array of individuals, where each individual is a numpy array of weights and biases.
@@ -168,9 +168,12 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
     # Create new population
     pop_new = np.zeros_like(pop)
     
-    # Add random individuals
-    add_amount = int(len(pop) / 10)
-    pop_new[-add_amount:] = np.random.uniform(dom_lower, dom_upper, size=(add_amount, *pop.shape[1:]))
+    if exploration_island:
+        add_amount = 0
+    else:
+        # Add random individuals
+        add_amount = int(len(pop) / 10)
+        pop_new[-add_amount:] = np.random.uniform(dom_lower, dom_upper, size=(add_amount, *pop.shape[1:]))
     
     parents = np.zeros((len(pop)-add_amount, *pop.shape[1:]))
     if pick_parent_method == "greedy":
@@ -185,7 +188,10 @@ def evolution_step(env, pop, pfit, mutation_rate, mutation_type, fitness_method,
             parents[i] = pick_parent(pop, pfit_norm, method=pick_parent_method).copy()
 
     # Crossover
-    pop_new[:-add_amount] = crossover(parents, crossover_method)
+    if exploration_island:
+        pop_new[:] = crossover(parents, crossover_method)
+    else:
+        pop_new[:-add_amount] = crossover(parents, crossover_method)
 
     # Mutate
     if mutation_type == 'normal':
@@ -251,7 +257,7 @@ def main(
         mutation_type = 'stochastic_decaying', # 'normal', 'stochastic_decaying'
         start_new = False,
         exploration_island = False,
-        exploration_gens = 10,
+        exploration_gens = 15,
 ):
     # Remove old options
     if multi_ini:
@@ -360,6 +366,7 @@ def main(
         # Perform one step of evolution
         pop, pfit = evolution_step(env, pop, pfit, mutation_rate, mutation_type=mutation_type, fitness_method=fitness_method, 
                                    pick_parent_method=pick_parent_method, survivor_method=survivor_method, crossover_method=crossover_method, dom_upper=domain_upper, dom_lower=domain_lower,
+                                   exploration_island=exploration_island,
         )
         # Get stats
         if fitness_method == "rank":
@@ -368,7 +375,7 @@ def main(
             best_idx    = np.argmax(pfit[fitness_method])
 
         for key in pfit:
-            results_dict[f'best_{key}'] = pfit[key][best_idx]
+            results_dict[f'best_{key}'] = np.max(pfit[key])
             results_dict[f'mean_{key}'] = np.mean(pfit[key])
             results_dict[f'std_{key}'] = np.std(pfit[key])
             results_dict[f'Q5_{key}'] = np.quantile(pfit[key], 0.05)
@@ -386,7 +393,7 @@ def main(
                 best_idx    = np.argmax(pfit_explore[fitness_method])
 
             for key in pfit:
-                results_dict[f'best_{key}_explore'] = pfit_explore[key][best_idx]
+                results_dict[f'best_{key}_explore'] = np.max(pfit_explore[key])
                 results_dict[f'mean_{key}_explore'] = np.mean(pfit_explore[key])
                 results_dict[f'std_{key}_explore'] = np.std(pfit_explore[key])
                 results_dict[f'Q5_{key}_explore'] = np.quantile(pfit_explore[key], 0.05)
@@ -491,15 +498,15 @@ def run_test(config, based_on_eval_best=None, test_all_enemies=False):
 if __name__ == '__main__':
     config = {
         # "experiment_name":      'optimization_test',
-        "enemies":              [4],                # [1, 2, 3, 4, 5, 6, 7, 8]
+        "enemies":              [1,2,3,4,5,6,7,8],                # [1, 2, 3, 4, 5, 6, 7, 8]
         "fitness_method":       "rank",         # "default", "balanced", "rank"
         "pick_parent_method":   "multinomial", # "tournament", "multinomial", "greedy"
         "survivor_method":      "multinomial", # "greedy", "multinomial", "tournament"
         "crossover_method":     "none",     # "none", "default", "ensemble"
         "mutation_type":        "stochastic_decaying",      # "stochastic_decaying", "normal"
         "exploration_island":   True,
-        "exploration_gens":     10,
-        "gens":                 100,
+        "exploration_gens":     15,
+        "gens":                 1000,
         "pop_size":             100,
     }
 

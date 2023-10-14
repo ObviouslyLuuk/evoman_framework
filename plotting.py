@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind
 from helpers import RESULTS_DIR
 
-def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, fitness_method="default", plot_separate_lines=False, exploration_island=False):
+def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, fitness_method="default", plot_separate_lines=False, exploration_island=False, min_len=None):
     """
     Creates a plot of the fitness vs generation for the given folder.
     One line for the average best fitness, one for the average mean fitness and a band for the standard deviation of both.
@@ -34,7 +34,9 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             exploration_gens = saved_config['exploration_gens']
 
     # Get shortest df
-    min_len = min([len(df) for df in dfs])
+    if not min_len:
+        min_len = min([len(df) for df in dfs])
+        print(f'Shortest length: {min_len}')
     
     # Aggregate data
     # Check if this fitness method is in the df
@@ -60,7 +62,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='green')
     else:
         for df in dfs:
-            plt.plot(df[f'best_{fitness_method}'], color='green', alpha=0.3, label=f'Best {methods[0]}')
+            plt.plot(df[f'best_{fitness_method}'].iloc[:min_len], color='green', alpha=0.3, label=f'Best {methods[0]}')
             # plt.plot(df[f'mean_{fitness_method}'], color='green', linestyle='dashed', alpha=0.3)
 
     if folders2:
@@ -81,7 +83,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
             plt.fill_between(range(len(aggr_df[f'mean_{fitness_method}','mean'])), aggr_df[f'mean_{fitness_method}','mean'] - aggr_df[f'mean_{fitness_method}','std'], aggr_df[f'mean_{fitness_method}','mean'] + aggr_df[f'mean_{fitness_method}','std'], alpha=0.1, color='blue')
         else:
             for df in dfs:
-                plt.plot(df[f'best_{fitness_method}'], color='blue', alpha=0.3, label=f'Best {methods[1]}')
+                plt.plot(df[f'best_{fitness_method}'].iloc[:min_len], color='blue', alpha=0.3, label=f'Best {methods[1]}')
                 # plt.plot(df[f'mean_{fitness_method}'], color='blue', linestyle='dashed', alpha=0.3)
 
         # Add legend
@@ -101,7 +103,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
     
     if exploration_gens:
         # Make vertical dotted lines at each exploration merge, where each merge happens at gen % exploration_merge == 0
-        for i in range(0, len(aggr_df), exploration_gens):
+        for i in range(0, min_len, exploration_gens):
             plt.axvline(x=i, color='black', linestyle='dotted')
 
     plt.title(f'Fitness by generation - Enemy {enemies}')

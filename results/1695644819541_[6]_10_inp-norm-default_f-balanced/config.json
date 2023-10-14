@@ -25,5 +25,6 @@
     "best_balanced": 70.87946500072786,
     "mean_balanced": 39.363801693109295,
     "std_balanced": 15.730289177380572,
-    "exploration_island": false
+    "exploration_island": false,
+    "exploration_gens": 10
 }
