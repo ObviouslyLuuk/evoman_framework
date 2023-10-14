@@ -115,7 +115,7 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         plt.savefig(f'plots/{str(variable)}/plot.png')
     plt.show()
 
-def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, randomini_eval=False, multi_ini_eval=False):
+def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, randomini_eval=False, multi_ini_eval=False, all_enemies_eval=False):
     """
     Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution in eval_best.json.
     Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
@@ -133,6 +133,8 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
         add_str = "_randomini"
     elif multi_ini_eval:
         add_str = "_multi-ini"
+    elif all_enemies_eval:
+        add_str = "_all-enemies"
 
     runs = []
     for folder in folders1:
@@ -148,6 +150,8 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
         with open(f'{results_dir}/{folder}/eval_best{add_str}.json', 'r') as f:
             saved = json.load(f)
         df = pd.DataFrame(saved["results"])
+        if "gains" in df.columns:
+            df = df.drop(columns=['gains'])
         # Turn wins list into number of wins if wins is a list type
         if type(df['wins'][0]) == list:
             df['wins'] = df['wins'].apply(lambda x: sum(x))
@@ -170,9 +174,9 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
             # Read results from eval_best.json
             with open(f'{results_dir}/{folder}/eval_best{add_str}.json', 'r') as f:
                 saved = json.load(f)
-            df = pd.DataFrame(saved["results"][0], index=[0])
-            for result in saved["results"][1:]:
-                df = pd.concat([df, pd.DataFrame(result, index=[0])], ignore_index=True)
+            df = pd.DataFrame(saved["results"])
+            if "gains" in df.columns:
+                df = df.drop(columns=['gains'])
             # Turn wins list into number of wins
             if type(df['wins'][0]) == list:
                 df['wins'] = df['wins'].apply(lambda x: sum(x))
