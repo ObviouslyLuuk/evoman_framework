@@ -115,59 +115,56 @@ def create_plot(variable, folders1, folders2=None, figsize=(10,5), save_png=Fals
         plt.savefig(f'plots/{str(variable)}/plot.png')
     plt.show()
 
-def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, randomini_eval=False, multi_ini_eval=False, all_enemies_eval=False):
+def create_boxplot(config_updates, folders_list, metric="gain", figsize=(10,5), save_png=False, results_dir=RESULTS_DIR, randomini_eval=False, multi_ini_eval=False, all_enemies_eval=False, box_width=0.8, y_lim=None, color=None):
     """
     Creates a boxplot for one experiment with multiple runs. Each of these runs has 5 final evaluations of the best solution in eval_best.json.
     Each boxplot datapoint represents one run, so it's the mean of that run's 5 evals.
     Can use the gain, default fitness, balanced fitness or number of wins as the metric.
     Also print the results of a t-test comparing the results from folders1 and folders2.
     """
-    if not folders1:
+    no_folders = True
+    for folders in folders_list:
+        if folders:
+            no_folders = False
+    if no_folders:
         print('No folders given')
         return
-    
-    enemies = None
 
-    add_str = ""
-    if randomini_eval:
-        add_str = "_randomini"
-    elif multi_ini_eval:
-        add_str = "_multi-ini"
-    elif all_enemies_eval:
-        add_str = "_all-enemies"
+    data = []
+    for folders, conf_update in zip(folders_list, config_updates.values()):
+        if "max_gen" not in conf_update:
+            max_gen = None
+        else:
+            max_gen = conf_update['max_gen']
+        if "min_gen" not in conf_update:
+            min_gen = 0
+        else:
+            min_gen = conf_update['min_gen']
 
-    runs = []
-    for folder in folders1:
-        if not enemies:
-            with open(f'{results_dir}/{folder}/config.json', 'r') as f:
-                saved_config = json.load(f)
-            enemies = saved_config['enemies']
+        # Get enemies from config.json
+        with open(f'{results_dir}/{folders[0]}/config.json', 'r') as f:
+            saved_config = json.load(f)
+        enemies = saved_config['enemies']
 
-        # Create empty df with columns for [gain, fitness, fitness_balanced, n_wins]
-        df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
+        add_str = ""
+        if randomini_eval:
+            add_str = "_randomini"
+        elif multi_ini_eval:
+            add_str = "_multi-ini"
+        elif all_enemies_eval and not enemies == [1, 2, 3, 4, 5, 6, 7, 8]:
+            add_str = "_all-enemies"
+        
+        if max_gen:
+            # Filter folders where {results_dir}/{folder}/bests exists
+            folders = [folder for folder in folders if os.path.exists(f'{results_dir}/{folder}/bests')]
+            add_str += f'_gen{max_gen}'
+        if min_gen:
+            # Filter folders where config gen is >= min_gen
+            folders = [folder for folder in folders if not os.path.exists(f'{results_dir}/{folder}/bests')]
+        print(f'Folders after filtering: {len(folders)}')
 
-        # Read results from eval_best.json
-        with open(f'{results_dir}/{folder}/eval_best{add_str}.json', 'r') as f:
-            saved = json.load(f)
-        df = pd.DataFrame(saved["results"])
-        if "gains" in df.columns:
-            df = df.drop(columns=['gains'])
-        # Turn wins list into number of wins if wins is a list type
-        if type(df['wins'][0]) == list:
-            df['wins'] = df['wins'].apply(lambda x: sum(x))
-
-        # Average over the 5 evals, keep dims
-        df = df.mean(axis=0)
-        df = df.to_frame().transpose()
-        runs.append(df)
-    runs = pd.concat(runs, axis=0)
-
-    data = runs[metric]
-    plt.figure(figsize=figsize)
-
-    if folders2:
         runs = []
-        for folder in folders2:
+        for folder in folders:
             # Create empty df with columns for [gain, fitness, fitness_balanced, n_wins]
             df = pd.DataFrame(columns=['gain', 'fitness', 'fitness_balanced', 'wins'])
 
@@ -177,33 +174,53 @@ def create_boxplot(variable, folders1, folders2=None, metric="gain", figsize=(10
             df = pd.DataFrame(saved["results"])
             if "gains" in df.columns:
                 df = df.drop(columns=['gains'])
-            # Turn wins list into number of wins
+            # Turn wins list into number of wins if wins is a list type
             if type(df['wins'][0]) == list:
                 df['wins'] = df['wins'].apply(lambda x: sum(x))
 
-            # Average over the 5 evals
+            # Average over the 5 evals, keep dims
             df = df.mean(axis=0)
             df = df.to_frame().transpose()
             runs.append(df)
         runs = pd.concat(runs, axis=0)
 
-        data = [data, runs[metric]]
+        data.append(runs[metric])
+
+    if len(data) == 1:
+        data = data[0]
+
+    plt.figure(figsize=figsize)
 
     # Plot boxplot(s)
-    plt.boxplot(data)
-    plt.xticks([1,2], list(variable.values())[0])
-    plt.title(f'{metric.capitalize()} boxplot - Enemy {enemies}')
+    if not color:
+        plt.boxplot(data, widths=box_width)
+    else: # Use color as facecolor and black as edgecolor and the mean line
+        plt.boxplot(data, widths=box_width, patch_artist=True, boxprops=dict(facecolor=color, color='black', linewidth=1.5), medianprops=dict(color='black', linewidth=1.5))
+    plt.xticks(range(1,len(folders_list)+1), list(config_updates.keys()))
+    plt.title(f'{metric.capitalize()} boxplot\nEnemy {enemies}')
+
+    if y_lim:
+        plt.ylim(y_lim)
 
     plt.xlabel('Method')
     plt.ylabel(metric.capitalize())
-    if save_png:
-        if not os.path.exists(f'plots/{str(variable)}'):
-            os.makedirs(f'plots/{str(variable)}')
-        plt.savefig(f'plots/{str(variable)}/{metric}_boxplot.png')
+    # if save_png:
+    #     if not os.path.exists(f'plots/{str(variable)}'):
+    #         os.makedirs(f'plots/{str(variable)}')
+    #     plt.savefig(f'plots/{str(variable)}/{metric}_boxplot.png')
     plt.show()
 
     # Print t-test results
-    if folders2:
-        print(f'T-test results for {metric}: {ttest_ind(data[1], data[0])}')
+    if len(folders_list) == 1:
+        return
+    
+    # Do T-test for each pair of folders
+    for i in range(len(folders_list)):
+        for j in range(len(folders_list)):
+            if i <= j:
+                continue
+            method_i = list(config_updates.keys())[i].replace("\n"," ")
+            method_j = list(config_updates.keys())[j].replace("\n"," ")
+            print(f'T-test results for {metric} between {method_j} and {method_i}: {ttest_ind(data[i], data[j])}')
 
 

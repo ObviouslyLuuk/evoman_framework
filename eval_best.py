@@ -10,8 +10,27 @@ from optimization_dummy import fitness_balanced
 from helpers import RESULTS_DIR, ENEMY_POSITIONS
 
 
-def run_test(folder, enemies=None, randomini_test="no", multi_ini_test=False, results_dir=RESULTS_DIR):
-    best_solution = np.loadtxt(f'{results_dir}/{folder}/best.txt')
+def get_best_with_max_gen(folder, max_gen=300, results_dir=RESULTS_DIR):
+    """Get best solution from folder/bests/ that doesn't exceed max_gen. Solution filenames are formatted like best_{gen}_{fitness}.txt"""
+    if not os.path.exists(f'{results_dir}/{folder}/bests'):
+        raise Exception(f'No bests folder in {results_dir}/{folder}')
+
+    best_solution = None
+    bests = [f for f in os.listdir(f'{results_dir}/{folder}/bests') if os.path.isfile(f'{results_dir}/{folder}/bests/{f}') and f.endswith('.txt')]
+    for best in bests:
+        gen = int(best.split('_')[1])
+        if gen <= max_gen:
+            best_solution = np.loadtxt(f'{results_dir}/{folder}/bests/{best}')
+
+    return best_solution
+
+
+def run_test(folder, enemies=None, randomini_test="no", multi_ini_test=False, results_dir=RESULTS_DIR, max_gen=None):
+    if not max_gen:
+        best_solution = np.loadtxt(f'{results_dir}/{folder}/best.txt')
+    else:
+        best_solution = get_best_with_max_gen(folder, max_gen=max_gen, results_dir=results_dir)
+
     with open(f"{results_dir}/{folder}/config.json", "r") as f:
         config = json.load(f)
     if not enemies:
@@ -88,6 +107,7 @@ if __name__ == "__main__":
     all_enemies_values = [False, True] # False should be first if running both (because we copy eval_best.json to eval_best_all-enemies.json if enemies == [1, 2, 3, 4, 5, 6, 7, 8])
     randomini_values = ["no"]
     multi_ini_values = [False]
+    MAX_GEN = 300 # None is default
 
     for folder in tqdm(folders):
         # Get gen from config.json
@@ -97,6 +117,15 @@ if __name__ == "__main__":
             print(f"Skipping {folder} because not default normalization method (deprecated)")
             continue
         gen = config["gen"]
+
+        if MAX_GEN:
+            if gen <= MAX_GEN:
+                print(f"Skipping {folder} because gen {gen} <= MAX_GEN {MAX_GEN}")
+                continue
+            elif not os.path.exists(f'{RESULTS_DIR}/{folder}/bests'):
+                print(f"Skipping {folder} because no bests folder")
+                continue
+            gen = MAX_GEN
 
         for randomini_test in randomini_values:            
             for multi_ini_test in multi_ini_values:
@@ -124,6 +153,9 @@ if __name__ == "__main__":
                             continue
                     else:
                         enemies = config["enemies"]
+                    
+                    if MAX_GEN:
+                        add_str += f"_gen{MAX_GEN}"
 
                     # Skip run if already eval_best.json for the config and latest generation
                     if os.path.exists(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json"):
@@ -144,7 +176,8 @@ if __name__ == "__main__":
 
                     test_results = {"gen": gen, "enemies": enemies, "results": []}
                     for i in range(use_n):
-                        test_results["results"].append(run_test(folder, enemies=enemies, randomini_test=randomini_test, multi_ini_test=multi_ini_test, results_dir=RESULTS_DIR))
+                        test_results["results"].append(run_test(folder, enemies=enemies, randomini_test=randomini_test, multi_ini_test=multi_ini_test, results_dir=RESULTS_DIR, 
+                                                                max_gen=MAX_GEN))
                 
                     with open(f"{RESULTS_DIR}/{folder}/eval_best{add_str}.json", "w") as f:
                         try:
