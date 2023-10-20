@@ -107,7 +107,7 @@ if __name__ == "__main__":
     all_enemies_values = [False, True] # False should be first if running both (because we copy eval_best.json to eval_best_all-enemies.json if enemies == [1, 2, 3, 4, 5, 6, 7, 8])
     randomini_values = ["no"]
     multi_ini_values = [False]
-    MAX_GEN = 300 # None is default
+    MAX_GEN = None # None is default
 
     for folder in tqdm(folders):
         # Get gen from config.json
