@@ -8,7 +8,7 @@ OUR CODE:
 - optimization_dummy.py: contains the optimization algorithm in main() and run_test() which runs the game with the best solution and prints the results
 - run_optim.py: code to run the optimization algorithm for a number of runs and different enemies at once, or run tests
 - helpers.py: contains code for saving results and loading solutions/populations
-- custom_controller.py: contains our custom controller that is used to play the game (main addition is normalizing the inputs differently)
+- demo_controller.py: contains the default controller that is used to play the game
 - eval_best.py: code to test every run with the best solution 5 times and save the results
 - plotting.py: code to retrieve and plot the results
 - plotting.ipynb: notebook for visualizing the results using plotting.py
